@@ -31,7 +31,7 @@
       default-src 'self';
       script-src 'self' 'unsafe-inline' 'unsafe-eval';
       style-src 'self' 'unsafe-inline';
-      connect-src 'self' https://*.backblazeb2.com https://e2ee-file-drop.netlify.app/api/*;
+      connect-src 'self' https://*.backblazeb2.com https://e2ee-file-drop.netlify.app;
       img-src 'self' data: blob:;
       worker-src 'self' blob:;
     """
