@@ -28,6 +28,7 @@ export function CreateSession() {
   const { createSession: apiCreateSession } = useApi();
 
   useEffect(() => {
+    if (sessionId) return;
     async function createSession() {
       try {
         // Generate key pair
@@ -51,7 +52,7 @@ export function CreateSession() {
     }
 
     createSession();
-  });
+  }, [apiCreateSession, sessionId]);
 
   useEffect(() => {
     if (!sessionId || !privateKey) return;
