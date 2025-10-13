@@ -1,0 +1,104 @@
+[build]
+  command = "npm run build"
+  publish = "dist"  # or "build" for CRA
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Redirect all routes to index.html for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["*"]}
+  force = false
+
+# API routes go to functions first
+[[redirects]]
+  from = "/api/*"
+  to = "/api/:splat"
+  status = 200
+  force = true
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    # CSP for crypto operations 
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline';
+      connect-src 'self' https://*.backblazeb2.com /api/;
+      img-src 'self' data: blob:;
+      worker-src 'self' blob:;
+    """
+
+# Cache static assets aggressively
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Don't cache HTML
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Environment variables (also set in Netlify dashboard for secrets)
+# [context.production.environment]
+#   AWS_REGION = "us-east-1"
+#   S3_BUCKET = "your-bucket-name"
+#   DYNAMODB_TABLE = "e2ee-sessions"
+#   # AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set in dashboard
+
+[context.deploy-preview]
+  command = "npm run build"
+
+[context.branch-deploy]
+  command = "npm run build"
+
+# Function settings
+[functions]
+  node_bundler = "esbuild"
+  # External node modules that shouldn't be bundled
+#   external_node_modules = ["@aws-sdk/client-s3", "@aws-sdk/client-dynamodb", "@aws-sdk/s3-request-presigner"]
+  
+  # Increase memory for functions handling large files
+  # (though with presigned URLs, they shouldn't need it)
+  included_files = []
+
+# # Individual function config if needed
+# [[functions."create-session".config]]
+#   path = "/.netlify/functions/create-session"
+
+# [[functions."get-session".config]]
+#   path = "/.netlify/functions/get-session/*"
+
+# [[functions."get-upload-url".config]]
+#   path = "/.netlify/functions/get-upload-url/*"
+
+# [[functions."get-download-url".config]]
+#   path = "/.netlify/functions/get-download-url"

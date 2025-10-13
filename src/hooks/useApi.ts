@@ -1,0 +1,61 @@
+import type { CreateSessionResponse, SessionResponse, UploadUrlResponse } from "@/types/api";
+import type { EncryptedFile, EncryptedFileMetadata } from "@/types/data";
+import { useCallback } from "react";
+
+
+export function useApi() {
+  const getSession = useCallback(async (sessionId: string) => {
+    const response = await fetch(`/api/get-session/${sessionId}`);
+    if (!response.ok) throw new Error('Failed to fetch session');
+    return (await response.json()) as SessionResponse;
+  }, []);
+
+  const getUploadUrl = useCallback(async (sessionId: string, metadata: EncryptedFileMetadata) => {
+    const response = await fetch(`/api/get-upload-url/${sessionId}`, {
+      method: 'POST',
+      body: JSON.stringify(metadata),
+    });
+    if (!response.ok) throw new Error('Failed to get upload URL');
+    return (await response.json()) as UploadUrlResponse;
+  }, []);
+
+  const getDownloadUrl = useCallback(async (sessionId: string) => {
+    const response = await fetch(`/api/download-url/${sessionId}`);
+    if (!response.ok) throw new Error('Failed to get download URL');
+    return (await response.json()) as { downloadUrl: string };
+  }, []);
+
+  const createSession = useCallback(async (publicKey: string) => {
+    const response = await fetch(`/api/create-session`, {
+      method: 'POST',
+      body: JSON.stringify({ publicKey }),
+    });
+    if (!response.ok) throw new Error('Failed to create session');
+    return (await response.json()) as CreateSessionResponse;
+  }, []);
+
+  const downloadSessionFile = useCallback(async (sessionId: string) => {
+    const downloadUrl = await getDownloadUrl(sessionId);
+    const blobResponse = await fetch(downloadUrl.downloadUrl);
+    if (!blobResponse.ok) throw new Error('Failed to download file');
+
+    // const sessionId = blobResponse.headers.get('x-amz-meta-sessionid');
+    // const encrypted = blobResponse.headers.get('x-amz-meta-encrypted');
+    const metadata: EncryptedFileMetadata = {
+      fileName: blobResponse.headers.get('x-amz-meta-filename') || '',
+      fileSize: parseInt(blobResponse.headers.get('content-length') || '0', 10),
+      nonce: blobResponse.headers.get('x-amz-meta-nonce') || '',
+      mimeType: blobResponse.headers.get('content-type') || 'application/octet-stream',
+      senderPublicKey: blobResponse.headers.get('x-amz-meta-publickey') || '',
+    };
+
+    const blob = await blobResponse.blob();
+    const file: EncryptedFile<Blob> = {
+      encrypted: blob,
+      ...metadata
+    };
+    return file;
+  }, [getDownloadUrl]);
+
+  return { getSession, getUploadUrl, getDownloadUrl, createSession, downloadSessionFile };
+}
