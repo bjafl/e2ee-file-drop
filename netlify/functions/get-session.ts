@@ -1,4 +1,4 @@
-import { Config } from '@netlify/edge-functions';
+import { Config, Context } from '@netlify/edge-functions';
 import { getStore } from '@netlify/blobs';
 
 interface Session {
@@ -9,12 +9,9 @@ interface Session {
   fileSize?: number;
   fileName?: string;
 }
-
-export default async (request: Request) => {
-  const pattern = new URLPattern('/api/get-session/:sessionId');
-  const match = pattern.exec(request.url);
-  const sessionId = match?.pathname.groups.sessionId;
-
+export default async function handler(request: Request, context: Context) {
+  const sessionId = context.params?.sessionId;
+  
   if (!sessionId) {
     return new Response(JSON.stringify({ error: 'Missing sessionId in URL' }), {
       status: 400,

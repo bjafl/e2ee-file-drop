@@ -1,4 +1,4 @@
-import { Config } from "@netlify/edge-functions";
+import { Config, Context } from "@netlify/edge-functions";
 import { getStore } from "@netlify/blobs";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -29,15 +29,12 @@ interface EncryptedFileMetadata {
   mimeType: string;
   senderPublicKey: string; // base64
 }
-export default async (request: Request) => {
+export default async (request: Request, context: Context) => {
   if (request.method !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+    return new Response("Method Not Allowed", { status: 405 });
   }
 
-  // const sessionId = context.params?.sessionId;
-  const pattern = new URLPattern("/api/get-upload-url/:sessionId");
-  const match = pattern.exec(request.url);
-  const sessionId = match?.pathname.groups.sessionId;
+  const sessionId = context.params?.sessionId;
 
   if (!sessionId) {
     return new Response(JSON.stringify({ error: "Missing sessionId in URL" }), {
