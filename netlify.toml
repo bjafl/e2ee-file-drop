@@ -9,10 +9,8 @@
 # Redirect all routes to index.html for SPA routing
 [[redirects]]
   from = "/*"
-  to = "/"
+  to = "/index.html"
   status = 200
-  conditions = {Role = ["*"]}
-  force = false
 
 # Security headers
 [[headers]]
