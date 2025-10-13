@@ -1,8 +1,8 @@
-import { Config, Context } from "@netlify/edge-functions";
-import { getStore } from "@netlify/blobs";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { nanoid } from "nanoid";
+import { Config, Context } from '@netlify/edge-functions';
+import { getStore } from '@netlify/blobs';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { nanoid } from 'nanoid';
 
 const b2 = new S3Client({
   region: process.env.B2_REGION!,
@@ -17,7 +17,7 @@ interface Session {
   senderPublicKey?: string;
   recipientPublicKey: string;
   expiresAt: number;
-  status: "waiting" | "uploading" | "uploaded" | "downloaded";
+  status: 'waiting' | 'uploading' | 'uploaded' | 'downloaded';
   s3Key?: string;
   fileSize?: number;
   fileName?: string;
@@ -30,14 +30,14 @@ interface EncryptedFileMetadata {
   senderPublicKey: string; // base64
 }
 export default async (request: Request, context: Context) => {
-  if (request.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
   }
 
   const sessionId = context.params?.sessionId;
 
   if (!sessionId) {
-    return new Response(JSON.stringify({ error: "Missing sessionId in URL" }), {
+    return new Response(JSON.stringify({ error: 'Missing sessionId in URL' }), {
       status: 400,
     });
   }
@@ -46,18 +46,18 @@ export default async (request: Request, context: Context) => {
     (await request.json()) as EncryptedFileMetadata;
 
   if (!sessionId) {
-    return new Response(JSON.stringify({ error: "Missing sessionId" }), {
+    return new Response(JSON.stringify({ error: 'Missing sessionId' }), {
       status: 400,
     });
   }
 
-  const store = getStore("sessions");
+  const store = getStore('sessions');
   const session = (await store.get(sessionId, {
-    type: "json",
+    type: 'json',
   })) as Session | null;
 
   if (!session) {
-    return new Response(JSON.stringify({ error: "Session not found" }), {
+    return new Response(JSON.stringify({ error: 'Session not found' }), {
       status: 404,
     });
   }
@@ -82,37 +82,49 @@ export default async (request: Request, context: Context) => {
     new PutObjectCommand({
       Bucket: process.env.B2_BUCKET!,
       Key: s3Key,
-      ContentType: "application/octet-stream",
+      ContentType: 'application/octet-stream',
       ContentLength: fileSize,
       Metadata: {
         sessionId,
-        encrypted: "true",
+        encrypted: 'true',
         mimeType,
-        nonce: nonce || "",
-        fileName: fileName || "encrypted-file",
+        nonce: nonce || '',
+        fileName: fileName || 'encrypted-file',
       },
     }),
-    { expiresIn: 600 }
+    {
+      expiresIn: 600,
+      signableHeaders: new Set([
+        'content-type',
+        'content-length',
+        'host',
+        'x-amz-meta-sessionid',
+        'x-amz-meta-encrypted',
+        'x-amz-meta-mimetype',
+        'x-amz-meta-nonce',
+        'x-amz-meta-filename',
+      ]),
+    }
   );
 
   // Update session
   session.s3Key = s3Key;
   session.fileSize = fileSize;
   session.fileName = fileName;
-  session.status = "uploading";
+  session.status = 'uploading';
   session.senderPublicKey = senderPublicKey;
 
   await store.setJSON(sessionId, session);
 
   return new Response(JSON.stringify({ uploadUrl, fileId }), {
     headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
     },
   });
 };
 
 export const config: Config = {
-  path: "/api/get-upload-url/:sessionId",
-  method: "POST",
+  path: '/api/get-upload-url/:sessionId',
+  method: 'POST',
 };
