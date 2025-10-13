@@ -1,4 +1,4 @@
-import { Config, Context } from '@netlify/edge-functions';
+import { Config } from '@netlify/edge-functions';
 import { getStore } from '@netlify/blobs';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -20,11 +20,18 @@ interface Session {
   fileSize?: number;
   fileName?: string;
 }
-export default async function handler(request: Request, context: Context) {
-  const sessionId = context.params?.sessionId;
+export default async function handler(request: Request) {
+  const pattern = new URLPattern('/api/get-download-url/:sessionId');
+  const match = pattern.exec(request.url);
+  const sessionId = match?.pathname.groups.sessionId;
+
   if (!sessionId) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Missing sessionId' }) };
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: "Missing sessionId in URL" }),
+    };
   }
+
 
   const store = getStore('sessions');
   const session = await store.get(sessionId, { type: 'json' }) as Session | null;

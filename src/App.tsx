@@ -13,6 +13,7 @@ function App() {
         <Route path="/create" element={<CreateSession />} />
         <Route path="/send/:sessionId" element={<FileUpload />} />
         <Route path="/download/:sessionId" element={<DownloadPage />} />
+        <Route path="/download" element={<DownloadPage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,17 +1,18 @@
-[build]
-  command = "npm run build"
-  publish = "dist"
-  functions = "netlify/functions"
+# [build]
+#   command = "npm run build"
+#   publish = "dist"
+#   functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "24"
 
-# # API routes go to functions first
-# [[redirects]]
-#   from = "/api/*"
-#   to = "/api/:splat"
-#   status = 200
-#   force = true
+# Redirect all routes to index.html for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/"
+  status = 200
+  conditions = {Role = ["*"]}
+  force = false
 
 # Security headers
 [[headers]]
