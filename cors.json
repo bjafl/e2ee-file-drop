@@ -1,0 +1,8 @@
+﻿[{
+  "corsRuleName": "downloadFromThisOneOrigin",
+  "allowedOrigins": ["https://e2ee-file-drop.netlify.app"],
+  "allowedOperations": ["b2_download_file_by_id", "b2_download_file_by_name", "s3_head", "s3_get", "s3_put"],
+  "allowedHeaders": ["authorization", "range", "content-type", "x-amz-*"],
+  "exposeHeaders": [],
+  "maxAgeSeconds": 3600
+}]
