@@ -1,4 +1,4 @@
-import { Config } from '@netlify/edge-functions';
+import { Config } from "@netlify/edge-functions";
 import { getStore } from "@netlify/blobs";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -29,30 +29,29 @@ interface EncryptedFileMetadata {
   mimeType: string;
   senderPublicKey: string; // base64
 }
-export default async function handler(request: Request) {
+export default async (request: Request) => {
   if (request.method !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   // const sessionId = context.params?.sessionId;
-  const pattern = new URLPattern('/api/get-upload-url/:sessionId');
+  const pattern = new URLPattern("/api/get-upload-url/:sessionId");
   const match = pattern.exec(request.url);
   const sessionId = match?.pathname.groups.sessionId;
 
   if (!sessionId) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Missing sessionId in URL" }),
-    };
+    return new Response(JSON.stringify({ error: "Missing sessionId in URL" }), {
+      status: 400,
+    });
   }
 
-  const { fileSize, fileName, nonce, senderPublicKey, mimeType } = await request.json() as EncryptedFileMetadata;
+  const { fileSize, fileName, nonce, senderPublicKey, mimeType } =
+    (await request.json()) as EncryptedFileMetadata;
 
   if (!sessionId) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ error: "Missing sessionId" }),
-    };
+    return new Response(JSON.stringify({ error: "Missing sessionId" }), {
+      status: 400,
+    });
   }
 
   const store = getStore("sessions");
@@ -61,21 +60,20 @@ export default async function handler(request: Request) {
   })) as Session | null;
 
   if (!session) {
-    return {
-      statusCode: 404,
-      body: JSON.stringify({ error: "Session not found" }),
-    };
+    return new Response(JSON.stringify({ error: "Session not found" }), {
+      status: 404,
+    });
   }
 
   // Size limit
   const maxSize = 50 * 1024 * 1024; // 50MB
   if (fileSize > maxSize) {
-    return {
-      statusCode: 413,
-      body: JSON.stringify({
+    return new Response(
+      JSON.stringify({
         error: `File too large (max ${maxSize / 1024 / 1024}MB)`,
       }),
-    };
+      { status: 413 }
+    );
   }
 
   const fileId = nanoid(16);
@@ -109,17 +107,12 @@ export default async function handler(request: Request) {
 
   await store.setJSON(sessionId, session);
 
-  return {
-    statusCode: 200,
+  return new Response(JSON.stringify({ uploadUrl, fileId }), {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
     },
-    body: JSON.stringify({
-      uploadUrl,
-      fileId,
-    }),
-  };
+  });
 };
 
 export const config: Config = {

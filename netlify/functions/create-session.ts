@@ -10,15 +10,15 @@ interface Session {
   fileName?: string;
 }
 
-export default async function handler(request: Request){//}, context: Context) {
+export default async (request: Request) => {
   if (request.method !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return new Response('Method Not Allowed', { status: 405 });
   }
 
   const { publicKey } = await request.json();
   
   if (!publicKey) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Missing publicKey' }) };
+    return new Response(JSON.stringify({ error: 'Missing publicKey' }), { status: 400 });
   }
 
   const sessionId = nanoid(16);
@@ -34,14 +34,12 @@ export default async function handler(request: Request){//}, context: Context) {
   const store = getStore('sessions');
   await store.setJSON(sessionId, session);
 
-  return {
-    statusCode: 200,
-    headers: { 
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-    },
-    body: JSON.stringify({ sessionId })
-  };
+  return new Response(JSON.stringify({ sessionId }), {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*"
+    }
+  });
 };
 
 export const config: Config = {
