@@ -83,27 +83,9 @@ export default async (request: Request, context: Context) => {
       Bucket: process.env.B2_BUCKET!,
       Key: s3Key,
       ContentType: 'application/octet-stream',
-      ContentLength: fileSize,
-      Metadata: {
-        sessionId,
-        encrypted: 'true',
-        mimeType,
-        nonce: nonce || '',
-        fileName: fileName || 'encrypted-file',
-      },
     }),
     {
       expiresIn: 600,
-      signableHeaders: new Set([
-        'content-type',
-        'content-length',
-        'host',
-        'x-amz-meta-sessionid',
-        'x-amz-meta-encrypted',
-        'x-amz-meta-mimetype',
-        'x-amz-meta-nonce',
-        'x-amz-meta-filename',
-      ]),
     }
   );
 

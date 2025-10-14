@@ -126,12 +126,6 @@ export function FileUpload() {
         body: encryptedBlob.encrypted,
         headers: {
           'Content-Type': 'application/octet-stream',
-          'Content-Length': String(encryptedBlob.fileSize),
-          'x-amz-meta-sessionid': sessionId,
-          'x-amz-meta-encrypted': 'true',
-          'x-amz-meta-mimetype': file.type,
-          'x-amz-meta-nonce': encryptedBlob.nonce || '',
-          'x-amz-meta-filename': file.name || 'encrypted-file',
         },
       });
 
