@@ -77,9 +77,8 @@ export function useFileEncryption({
             clearTimeout(timeout);
             setProgress(100);
             setIsProcessing(false);
-
             const encryptedBlob = new Blob(
-              [response.data.encrypted.buffer as ArrayBuffer],
+              [new Uint8Array(response.data.encrypted)],
               { type: 'application/octet-stream' }
             );
             resolve({
@@ -142,7 +141,7 @@ export function useFileEncryption({
             setIsProcessing(false);
 
             const file = new File(
-              [message.data.decrypted.buffer as ArrayBuffer],
+              [new Uint8Array(message.data.decrypted)],
               encryptedData.fileName,
               { type: encryptedData.mimeType }
             );
@@ -150,6 +149,7 @@ export function useFileEncryption({
           }
 
           if (e.data.type === 'decryptError') {
+            console.error(e.data)
             clearTimeout(timeout);
             setIsProcessing(false);
             reject(new Error('Decryption failed'));

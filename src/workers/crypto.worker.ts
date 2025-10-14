@@ -1,17 +1,23 @@
 // crypto.worker.ts
-import type { DecryptFileWorkerPayload, EncryptFileWorkerPayload, EncryptFileWorkerResponse, FileDecryptedMessage } from '@/types/data';
-import nacl from 'tweetnacl';
+import type {
+  DecryptFileWorkerPayload,
+  EncryptFileWorkerPayload,
+  EncryptFileWorkerResponse,
+  FileDecryptedMessage,
+} from "@/types/data";
+import nacl from "tweetnacl";
 // import { encodeBase64, decodeBase64 } from 'tweetnacl-util';
 
 self.onmessage = async (e) => {
   const { type, data } = e.data;
-  
-  if (type === 'encryptFile') {
-    const { unencrypted, recipientPublicKey, senderSecretKey } = data as EncryptFileWorkerPayload;
-    
+
+  if (type === "encryptFile") {
+    const { unencrypted, recipientPublicKey, senderSecretKey } =
+      data as EncryptFileWorkerPayload;
+
     // Generate nonce
     const nonce = nacl.randomBytes(nacl.box.nonceLength);
-    
+
     // Encrypt
     const encrypted = nacl.box(
       unencrypted,
@@ -19,35 +25,41 @@ self.onmessage = async (e) => {
       recipientPublicKey,
       senderSecretKey
     );
-    
+
     self.postMessage({
-      type: 'fileEncrypted',
+      type: "fileEncrypted",
       data: {
         encrypted,
         nonce,
-        originalSize: unencrypted.length
-      } 
+        originalSize: unencrypted.length,
+      },
     } as EncryptFileWorkerResponse);
   }
-  
-  if (type === 'decryptFile') {
-    const { encrypted, nonce, senderPublicKey, recipientSecretKey } = data as DecryptFileWorkerPayload;
-    
-    const decrypted = nacl.box.open(
-      encrypted,
-      nonce,
-      senderPublicKey,
-      recipientSecretKey
-    );
-    
-    if (!decrypted) {
-      self.postMessage({ type: 'decryptError' });
+
+  if (type === "decryptFile") {
+    const { encrypted, nonce, senderPublicKey, recipientSecretKey } =
+      data as DecryptFileWorkerPayload;
+
+    try {
+      console.log("Decrypting:", { encrypted, nonce, senderPublicKey, recipientSecretKey });
+      const decrypted = nacl.box.open(
+        encrypted,
+        nonce,
+        senderPublicKey,
+        recipientSecretKey
+      );
+      console.log("Decrypted:", decrypted);
+      if (!decrypted) {
+        throw new Error("Decryption failed");
+      }
+    self.postMessage({
+      type: "fileDecrypted",
+      data: { decrypted },
+    } as FileDecryptedMessage);
+    } catch (error) {
+      self.postMessage({ type: "decryptError", message: `${error}` });
       return;
     }
-    
-    self.postMessage({
-      type: 'fileDecrypted',
-      data: { decrypted }
-    } as FileDecryptedMessage);
+
   }
 };
