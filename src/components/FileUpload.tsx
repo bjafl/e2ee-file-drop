@@ -126,6 +126,7 @@ export function FileUpload() {
         body: encryptedBlob.encrypted,
         headers: {
           'Content-Type': 'application/octet-stream',
+          'Content-Length': String(encryptedBlob.fileSize),
         },
       });
 
