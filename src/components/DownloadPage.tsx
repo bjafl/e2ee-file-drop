@@ -35,6 +35,7 @@ export function DownloadPage() {
   }, [sessionIdParam]);
 
   useEffect(() => {
+    if (status !== 'checking' && status !== 'waiting') return;
     if (!sessionId) {
       //TODO! find from storage
       setError('Ingen session ID i URL');
