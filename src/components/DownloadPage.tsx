@@ -27,6 +27,7 @@ export function DownloadPage() {
   const { getSession, downloadSessionFile } = useApi();
   const { storedValues: storedKeys } = useBrowserStorage();
   const { decryptFile } = useFileEncryption({ privateKey });
+  const [nonce, setNonce] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (sessionIdParam) {
@@ -63,6 +64,7 @@ export function DownloadPage() {
           setFileName(data.fileName);
           setFileSize(data.fileSize);
           setSenderPublicKey(data.senderPublicKey);
+          setNonce(data.nonce);
         } else {
           setStatus('waiting');
         }
@@ -94,6 +96,13 @@ export function DownloadPage() {
 
     try {
       const file = await downloadSessionFile(sessionId);
+
+
+      //TODO
+      file.fileName = fileName || file.fileName;
+      file.fileSize = fileSize || file.fileSize;
+      file.nonce = nonce || file.nonce;
+      file.senderPublicKey = senderPublicKey || file.senderPublicKey;
 
       if (file.senderPublicKey != senderPublicKey) {
         console.warn("Sender public key mismatch!"); // TODO: handle this properly
