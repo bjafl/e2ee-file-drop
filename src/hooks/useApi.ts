@@ -20,7 +20,7 @@ export function useApi() {
   }, []);
 
   const getDownloadUrl = useCallback(async (sessionId: string) => {
-    const response = await fetch(`/api/download-url/${sessionId}`);
+    const response = await fetch(`/api/get-download-url/${sessionId}`);
     if (!response.ok) throw new Error('Failed to get download URL');
     return (await response.json()) as { downloadUrl: string };
   }, []);
