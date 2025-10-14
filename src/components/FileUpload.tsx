@@ -125,10 +125,10 @@ export function FileUpload() {
       const uploadResponse = await fetch(uploadUrl, {
         method: 'PUT',
         body: encryptedBlob.encrypted,
-        // headers: {
-        //   'Content-Type': 'application/octet-stream',
-        //   // 'Content-Length': String(encryptedSize),
-        // },
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'Content-Length': String(encryptedSize),
+        },
       });
 
       if (!uploadResponse.ok) {
