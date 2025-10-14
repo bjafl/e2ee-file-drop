@@ -10,12 +10,16 @@ const b2 = new S3Client({
     accessKeyId: process.env.B2_KEY_ID!,
     secretAccessKey: process.env.B2_APPLICATION_KEY!,
   },
+  requestChecksumCalculation: 'WHEN_REQUIRED'
 });
 
 interface Session {
-  publicKey: string;
+  senderPublicKey?: string;
+  recipientPublicKey: string;
   expiresAt: number;
-  status: "waiting" | "uploaded" | "downloaded";
+  status: 'waiting' | 'uploading' | 'uploaded' | 'downloaded';
+  nonce?: string;
+  mimeType?: string;
   s3Key?: string;
   fileSize?: number;
   fileName?: string;

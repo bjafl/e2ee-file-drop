@@ -2,9 +2,12 @@ import { Config, Context } from '@netlify/edge-functions';
 import { getStore } from '@netlify/blobs';
 
 interface Session {
-  publicKey: string;
+  senderPublicKey?: string;
+  recipientPublicKey: string;
   expiresAt: number;
-  status: 'waiting' | 'uploaded' | 'downloaded';
+  status: 'waiting' | 'uploading' | 'uploaded' | 'downloaded';
+  nonce?: string;
+  mimeType?: string;
   s3Key?: string;
   fileSize?: number;
   fileName?: string;
@@ -36,7 +39,7 @@ export default async function handler(request: Request, context: Context) {
   }
 
   return new Response(JSON.stringify({
-    publicKey: session.publicKey,
+    publicKey: session.recipientPublicKey,
     status: session.status,
     fileName: session.fileName,
     fileSize: session.fileSize

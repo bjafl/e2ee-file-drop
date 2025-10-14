@@ -1,10 +1,14 @@
 import { getStore } from '@netlify/blobs';
 import { nanoid } from 'nanoid';
 import type { Config } from "@netlify/edge-functions";
+
 interface Session {
-  publicKey: string;
+  senderPublicKey?: string;
+  recipientPublicKey: string;
   expiresAt: number;
-  status: 'waiting' | 'uploaded' | 'downloaded';
+  status: 'waiting' | 'uploading' | 'uploaded' | 'downloaded';
+  nonce?: string;
+  mimeType?: string;
   s3Key?: string;
   fileSize?: number;
   fileName?: string;
@@ -25,7 +29,7 @@ export default async (request: Request) => {
   const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24h
 
   const session: Session = {
-    publicKey,
+    recipientPublicKey: publicKey,
     expiresAt,
     status: 'waiting'
   };
