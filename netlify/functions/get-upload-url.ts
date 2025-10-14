@@ -76,15 +76,13 @@ export default async (request: Request, context: Context) => {
   }
 
 
-    const authString = Buffer.from(`${process.env.B2_KEY_ID!}:${process.env.B2_APPLICATION_KEY!}`).toString('base64');
+    const authHeader = Buffer.from(`${process.env.B2_KEY_ID!}:${process.env.B2_APPLICATION_KEY!}`).toString('base64');
     const authResponse = await fetch(
-      "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Basic ${authString}`,
-        },
-      }
+        "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
+        {
+            method: 'GET',
+            headers: { 'Authorization': `Basic ${authHeader}` }
+        }
     );
 
     if (!authResponse.ok) {
