@@ -86,11 +86,12 @@ export default async (request: Request, context: Context) => {
       Bucket: process.env.B2_BUCKET!,
       Key: s3Key,
       ContentType: 'application/octet-stream',
-      ContentLength: fileSize,
+      // ContentLength: fileSize,
     }),
     {
       expiresIn: 600,
-      signableHeaders: new Set(['content-type', 'content-length']), // Include content-type and content-length in signature
+      unhoistableHeaders: new Set(['content-length']), // Do not include content-length in canonical headers
+      signableHeaders: new Set(['content-type']), // Include content-type in signature
     }
   );
 
