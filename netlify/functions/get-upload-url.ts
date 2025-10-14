@@ -85,7 +85,7 @@ export default async (request: Request, context: Context) => {
     new PutObjectCommand({
       Bucket: process.env.B2_BUCKET!,
       Key: s3Key,
-      ContentType: 'application/octet-stream',
+      // ContentType: 'application/octet-stream',
       // ContentLength: fileSize,
     }),
     {
