@@ -76,10 +76,11 @@ export default async (request: Request, context: Context) => {
   }
 
 
-    const authString = btoa(`${process.env.B2_KEY_ID!}:${process.env.B2_APPLICATION_KEY!}`);
+    const authString = Buffer.from(`${process.env.B2_KEY_ID!}:${process.env.B2_APPLICATION_KEY!}`).toString('base64');
     const authResponse = await fetch(
       "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
       {
+        method: "GET",
         headers: {
           Authorization: `Basic ${authString}`,
         },
@@ -99,6 +100,7 @@ export default async (request: Request, context: Context) => {
         method: "POST",
         headers: {
           Authorization: authData.authorizationToken,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ bucketId: process.env.B2_BUCKET_ID! }),
       }
