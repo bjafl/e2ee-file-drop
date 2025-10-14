@@ -83,7 +83,7 @@ export default async (request: Request, context: Context) => {
       Bucket: process.env.B2_BUCKET!,
       Key: s3Key,
       ContentType: 'application/octet-stream',
-      ContentLength: fileSize,
+      // ContentLength: fileSize,
     }),
     {
       expiresIn: 600,
