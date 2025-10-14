@@ -101,13 +101,14 @@ export function FileUpload() {
       // Encrypt file
       setProgress(30);
       const encryptedBlob = await encryptFile(file, publicKey);
+      const encryptedSize = encryptedBlob.encrypted.size;
 
       setProgress(50);
 
       // Get upload URL
       const { uploadUrl } = await getUploadUrl(sessionId, {
         fileName: file.name,
-        fileSize: encryptedBlob.fileSize,
+        fileSize: encryptedSize,
         nonce: encryptedBlob.nonce,
         mimeType: file.type,
         senderPublicKey: publicKey,
@@ -126,7 +127,7 @@ export function FileUpload() {
         body: encryptedBlob.encrypted,
         headers: {
           'Content-Type': 'application/octet-stream',
-          'Content-Length': String(encryptedBlob.fileSize),
+          'Content-Length': String(encryptedSize),
         },
       });
 
