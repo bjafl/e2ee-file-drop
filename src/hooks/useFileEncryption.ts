@@ -1,6 +1,6 @@
-import nacl from "tweetnacl";
-import { decodeBase64, encodeBase64 } from "tweetnacl-util";
-import { useCallback, useRef, useEffect, useState } from "react";
+import nacl from 'tweetnacl';
+import { decodeBase64, encodeBase64 } from 'tweetnacl-util';
+import { useCallback, useRef, useEffect, useState } from 'react';
 import type {
   ContentFormat,
   DecryptFileWorkerPayload,
@@ -8,7 +8,7 @@ import type {
   EncryptFileWorkerPayload,
   EncryptFileWorkerResponse,
   FileDecryptedMessage,
-} from "@/types/data";
+} from '@/types/data';
 
 interface UseFileEncryptionOptions {
   keyPair?: nacl.BoxKeyPair;
@@ -29,31 +29,33 @@ export function useFileEncryption({
   );
 
   useEffect(() => {
-
     if (generateNewKeyPair) {
       setKeyPair(nacl.box.keyPair());
     } else if (keyPairInit) {
       setKeyPair(keyPairInit);
     } else if (privateKey) {
       const secretKey =
-        typeof privateKey === "string" ? decodeBase64(privateKey) : privateKey;
+        typeof privateKey === 'string' ? decodeBase64(privateKey) : privateKey;
       setKeyPair(nacl.box.keyPair.fromSecretKey(secretKey));
-    } 
+    }
   }, [generateNewKeyPair, keyPairInit, privateKey]);
 
   useEffect(() => {
     workerRef.current = new Worker(
-      new URL("../workers/crypto.worker.ts", import.meta.url),
-      { type: "module" }
+      new URL('../workers/crypto.worker.ts', import.meta.url),
+      { type: 'module' }
     );
 
     return () => workerRef.current?.terminate();
   }, []);
 
   const encryptFile = useCallback(
-    async (file: File, recipientPublicKey: string): Promise<EncryptedFile<string>> => {
+    async (
+      file: File,
+      recipientPublicKey: string
+    ): Promise<EncryptedFile<Blob>> => {
       if (!keyPair || !workerRef.current) {
-        throw new Error("Not ready");
+        throw new Error('Not ready');
       }
 
       setIsProcessing(true);
@@ -66,18 +68,22 @@ export function useFileEncryption({
       // Encrypt in worker
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error("Encryption timeout"));
+          reject(new Error('Encryption timeout'));
         }, 30000); // 30 second timeout
 
         workerRef.current!.onmessage = (e) => {
-          if (e.data.type === "fileEncrypted") {
+          if (e.data.type === 'fileEncrypted') {
             const response: EncryptFileWorkerResponse = e.data;
             clearTimeout(timeout);
             setProgress(100);
             setIsProcessing(false);
 
+            const encryptedBlob = new Blob(
+              [response.data.encrypted.buffer as ArrayBuffer],
+              { type: 'application/octet-stream' }
+            );
             resolve({
-              encrypted: encodeBase64(response.data.encrypted),
+              encrypted: encryptedBlob,
               nonce: encodeBase64(response.data.nonce),
               fileName: file.name,
               mimeType: file.type,
@@ -87,7 +93,7 @@ export function useFileEncryption({
         };
 
         workerRef.current!.postMessage({
-          type: "encryptFile",
+          type: 'encryptFile',
           data: {
             unencrypted: fileBytes,
             recipientPublicKey: decodeBase64(recipientPublicKey),
@@ -103,11 +109,11 @@ export function useFileEncryption({
 
   const decryptFile = useCallback(
     async <T extends ContentFormat>(
-      encryptedData: EncryptedFile<T>,
+      encryptedData: EncryptedFile<T>
       // senderPublicKey: string
     ): Promise<File> => {
       if (!keyPair || !workerRef.current) {
-        throw new Error("Not ready");
+        throw new Error('Not ready');
       }
 
       setIsProcessing(true);
@@ -125,11 +131,11 @@ export function useFileEncryption({
       }
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
-          reject(new Error("Decryption timeout"));
+          reject(new Error('Decryption timeout'));
         }, 30000);
 
         workerRef.current!.onmessage = (e) => {
-          if (e.data.type === "fileDecrypted") {
+          if (e.data.type === 'fileDecrypted') {
             const message = e.data as FileDecryptedMessage;
             clearTimeout(timeout);
             setProgress(100);
@@ -143,18 +149,18 @@ export function useFileEncryption({
             resolve(file);
           }
 
-          if (e.data.type === "decryptError") {
+          if (e.data.type === 'decryptError') {
             clearTimeout(timeout);
             setIsProcessing(false);
-            reject(new Error("Decryption failed"));
+            reject(new Error('Decryption failed'));
           }
         };
         workerRef.current!.postMessage({
-          type: "decryptFile",
+          type: 'decryptFile',
           data: {
             encrypted: encryptedPayload,
             nonce: decodeBase64(encryptedData.nonce),
-            senderPublicKey: decodeBase64(encryptedData.senderPublicKey || ""), //TODO: handle missing pub key
+            senderPublicKey: decodeBase64(encryptedData.senderPublicKey || ''), //TODO: handle missing pub key
             recipientSecretKey: keyPair.secretKey,
           } as DecryptFileWorkerPayload,
         });
