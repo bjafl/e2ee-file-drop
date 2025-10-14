@@ -87,7 +87,7 @@ export function useFileEncryption({
               nonce: encodeBase64(response.data.nonce),
               fileName: file.name,
               mimeType: file.type,
-              fileSize: encryptedBlob.size,
+              fileSize: response.data.originalSize,
             });
           }
         };

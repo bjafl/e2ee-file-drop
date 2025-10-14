@@ -2,9 +2,7 @@
 
 export interface UploadUrlResponse {
   uploadUrl: string;
-  authorizationToken: string;
-  fileName: string;
-  contentType: string;
+  fileId: string;
 }
 
 export interface SessionResponse {
