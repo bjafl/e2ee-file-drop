@@ -41,8 +41,6 @@ export function CreateSession() {
         const newSessionId = response.sessionId;
 
         setSessionId(newSessionId);
-        
-        // Store private key in sessionStorage
         setPrivateKey(encodeBase64(keys.secretKey));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Noe gikk galt");

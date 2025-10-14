@@ -1,6 +1,6 @@
 // components/FileUpload.tsx
 import { useState, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, /*useNavigate*/ } from "react-router-dom";
 import { Upload, File, X, Check, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,8 +29,8 @@ export function FileUpload() {
     // progress: encryptionProgress,
   } = useFileEncryption({ generateNewKeyPair: true });
   const { setValue: setStoredKey } = useBrowserStorage();
-  const { createSession, getUploadUrl } = useApi();
-  const navigate = useNavigate();
+  const { getUploadUrl } = useApi();
+  // const navigate = useNavigate();
 
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -96,7 +96,6 @@ export function FileUpload() {
       setProgress(10);
       if (!keyPair) throw new Error("Key pair not ready");
       const publicKey = encodeBase64(keyPair.publicKey);
-      const { sessionId } = await createSession(publicKey);
 
       // Encrypt file
       setProgress(30);
@@ -151,9 +150,10 @@ export function FileUpload() {
       setProgress(100);
       setSuccess(true);
 
-      setTimeout(() => {
-        navigate("/status?id=" + sessionId);
-      }, 500);
+      //TODO: Redirect when finished
+      // setTimeout(() => {
+      //   navigate("/status?id=" + sessionId);
+      // }, 500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Noe gikk galt");
       setProgress(0);
