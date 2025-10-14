@@ -23,14 +23,6 @@ export async function saveSession(sessionId: string, session: Session): Promise<
   await store.set(sessionId, JSON.stringify(session));
 }
 
-export async function updateSession(sessionId: string, updates: Partial<Session>): Promise<void> {
-  const session = await getSession(sessionId);
-  if (!session) throw new Error("Session not found");
-
-  const updatedSession = { ...session, ...updates };
-  await saveSession(sessionId, updatedSession);
-}
-
 export async function deleteSession(sessionId: string): Promise<void> {
   const store = getSessionStore();
   await store.delete(sessionId);
