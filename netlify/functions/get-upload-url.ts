@@ -1,18 +1,5 @@
 import { Config, Context } from '@netlify/edge-functions';
 import { getStore } from '@netlify/blobs';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { nanoid } from 'nanoid';
-
-const b2 = new S3Client({
-  region: process.env.B2_REGION!,
-  endpoint: process.env.B2_ENDPOINT!,
-  credentials: {
-    accessKeyId: process.env.B2_KEY_ID!,
-    secretAccessKey: process.env.B2_APPLICATION_KEY!,
-  },
-  requestChecksumCalculation: 'WHEN_REQUIRED'
-});
 
 interface Session {
   senderPublicKey?: string;
@@ -21,9 +8,9 @@ interface Session {
   status: 'waiting' | 'uploading' | 'uploaded' | 'downloaded';
   nonce?: string;
   mimeType?: string;
-  s3Key?: string;
   fileSize?: number;
   fileName?: string;
+  downloadUrl?: string;
 }
 interface EncryptedFileMetadata {
   fileName: string;
@@ -32,6 +19,18 @@ interface EncryptedFileMetadata {
   mimeType: string;
   senderPublicKey: string; // base64
 }
+interface B2AuthResponse {
+  authorizationToken: string;
+  apiUrl: string;
+  downloadUrl: string;
+}
+
+interface B2UploadUrlResponse {
+  bucketId: string;
+  uploadUrl: string;
+  authorizationToken: string;
+}
+
 export default async (request: Request, context: Context) => {
   if (request.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
@@ -76,27 +75,45 @@ export default async (request: Request, context: Context) => {
     );
   }
 
-  const fileId = nanoid(16);
-  const s3Key = `${sessionId}/${fileId}`;
 
-  // Generate presigned PUT URL (10 min expiry)
-  const uploadUrl = await getSignedUrl(
-    b2,
-    new PutObjectCommand({
-      Bucket: process.env.B2_BUCKET!,
-      Key: s3Key,
-      ContentType: 'application/octet-stream',
-      // ContentLength: fileSize,
-    }),
-    {
-      expiresIn: 600,
-      unhoistableHeaders: new Set(['content-length']), // Do not include content-length in canonical headers
-      signableHeaders: new Set(['content-type']), // Include content-type in signature
+    const authString = btoa(`${process.env.B2_KEY_ID!}:${process.env.B2_APPLICATION_KEY!}`);
+    const authResponse = await fetch(
+      "https://api.backblazeb2.com/b2api/v2/b2_authorize_account",
+      {
+        headers: {
+          Authorization: `Basic ${authString}`,
+        },
+      }
+    );
+
+    if (!authResponse.ok) {
+      return new Response(JSON.stringify({ error: `B2 authorization failed: ${authResponse.statusText}` }), { status: 500 });
     }
-  );
+
+    const authData: B2AuthResponse = await authResponse.json();
+
+    // Step 2: Get upload URL
+    const uploadUrlResponse = await fetch(
+      `${authData.apiUrl}/b2api/v2/b2_get_upload_url`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: authData.authorizationToken,
+        },
+        body: JSON.stringify({ bucketId: process.env.B2_BUCKET_ID! }),
+      }
+    );
+
+    if (!uploadUrlResponse.ok) {
+      return new Response(JSON.stringify({ error: 'Failed to get upload URL' }), { status: 500 });
+    }
+
+    const uploadData: B2UploadUrlResponse = await uploadUrlResponse.json();
+
+    const downloadUrl = `${authData.downloadUrl}/file/${process.env.B2_BUCKET!}/${fileName}`;
 
   // Update session
-  session.s3Key = s3Key;
+  session.downloadUrl = downloadUrl;
   session.fileSize = fileSize;
   session.fileName = fileName;
   session.status = 'uploading';
@@ -106,7 +123,12 @@ export default async (request: Request, context: Context) => {
 
   await store.setJSON(sessionId, session);
 
-  return new Response(JSON.stringify({ uploadUrl, fileId }), {
+  return new Response(JSON.stringify({ 
+        uploadUrl: uploadData.uploadUrl,
+        authorizationToken: uploadData.authorizationToken,
+        fileName: fileName,
+        contentType: mimeType || "b2/x-auto",
+      }), {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',

@@ -1,22 +1,22 @@
 // components/FileUpload.tsx
-import { useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Upload, File, X, Check, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Upload, File, X, Check, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { useFileEncryption } from '@/hooks/useFileEncryption';
-import { useApi } from '@/hooks/useApi';
-import { useBrowserStorage } from '@/hooks/useBrowserStorage';
-import { encodeBase64 } from 'tweetnacl-util';
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { useFileEncryption } from "@/hooks/useFileEncryption";
+import { useApi } from "@/hooks/useApi";
+import { useBrowserStorage } from "@/hooks/useBrowserStorage";
+import { encodeBase64 } from "tweetnacl-util";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -42,9 +42,9 @@ export function FileUpload() {
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (e.type === "dragleave") {
       setDragActive(false);
     }
   }, []);
@@ -94,7 +94,7 @@ export function FileUpload() {
     try {
       // Get public key
       setProgress(10);
-      if (!keyPair) throw new Error('Key pair not ready');
+      if (!keyPair) throw new Error("Key pair not ready");
       const publicKey = encodeBase64(keyPair.publicKey);
       const { sessionId } = await createSession(publicKey);
 
@@ -106,13 +106,16 @@ export function FileUpload() {
       setProgress(50);
 
       // Get upload URL
-      const { uploadUrl } = await getUploadUrl(sessionId, {
-        fileName: file.name,
-        fileSize: encryptedSize,
-        nonce: encryptedBlob.nonce,
-        mimeType: file.type,
-        senderPublicKey: publicKey,
-      });
+      const { uploadUrl, authorizationToken, fileName } = await getUploadUrl(
+        sessionId,
+        {
+          fileName: file.name,
+          fileSize: encryptedSize,
+          nonce: encryptedBlob.nonce,
+          mimeType: file.type,
+          senderPublicKey: publicKey,
+        }
+      );
 
       setStoredKey(sessionId, {
         theirPublicKey: publicKey,
@@ -121,28 +124,39 @@ export function FileUpload() {
 
       setProgress(70);
 
-      // Upload to Backblaze
+      // Calculate SHA1 hash of the file
+      const arrayBuffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest("SHA-1", arrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const sha1Hash = hashArray
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      // Upload the file directly to B2
       const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: encryptedBlob.encrypted,
+        method: "POST",
         headers: {
-          'Content-Type': 'application/octet-stream',
-          // 'Content-Length': String(encryptedSize),
+          Authorization: authorizationToken,
+          "X-Bz-File-Name": encodeURIComponent(fileName),
+          "Content-Type": file.type || "b2/x-auto",
+          "Content-Length": file.size.toString(),
+          "X-Bz-Content-Sha1": sha1Hash,
         },
+        body: file,
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Opplasting feilet');
+        throw new Error("Opplasting feilet");
       }
 
       setProgress(100);
       setSuccess(true);
 
       setTimeout(() => {
-        navigate('/');
+        navigate("/");
       }, 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Noe gikk galt');
+      setError(err instanceof Error ? err.message : "Noe gikk galt");
       setProgress(0);
     } finally {
       setUploading(false);
@@ -150,11 +164,11 @@ export function FileUpload() {
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
   return (
@@ -171,8 +185,8 @@ export function FileUpload() {
             <div
               className={`relative border-2 border-dashed rounded-lg p-12 transition-colors ${
                 dragActive
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-slate-300 hover:border-slate-400'
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-slate-300 hover:border-slate-400"
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
