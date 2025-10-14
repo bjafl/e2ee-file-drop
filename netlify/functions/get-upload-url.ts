@@ -28,8 +28,9 @@ export default async (request: Request, context: Context) => {
   if (uploadComplete) {
     try {
       updateSession(sessionId, { status: 'uploaded' });
+      const newVal = await getSession(sessionId); // todo: remove
       return new Response(
-        JSON.stringify({ message: 'Session updated to uploaded' }),
+        JSON.stringify({ message: `Session updated to ${newVal?.status || "null"}` }),
         { status: 200 }
       );
     } catch (error) {
