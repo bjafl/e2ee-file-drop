@@ -1,55 +1,47 @@
-import { Config, Context } from '@netlify/edge-functions';
-import { getStore } from '@netlify/blobs';
+import { Config, Context } from "@netlify/edge-functions";
+import { deleteSession, getSession } from "./lib/netlifyBlob";
 
-interface Session {
-  senderPublicKey?: string;
-  recipientPublicKey: string;
-  expiresAt: number;
-  status: 'waiting' | 'uploading' | 'uploaded' | 'downloaded';
-  nonce?: string;
-  mimeType?: string;
-  s3Key?: string;
-  fileSize?: number;
-  fileName?: string;
-}
 export default async function handler(request: Request, context: Context) {
   const sessionId = context.params?.sessionId;
-  
   if (!sessionId) {
-    return new Response(JSON.stringify({ error: 'Missing sessionId in URL' }), {
+    return new Response(JSON.stringify({ error: "Missing sessionId in URL" }), {
       status: 400,
     });
   }
 
-  const store = getStore('sessions');
-  const session = await store.get(sessionId, { type: 'json' }) as Session | null;
-
+  const session = await getSession(sessionId);
   if (!session) {
-    return new Response(JSON.stringify({ error: 'Session not found' }), { 
+    return new Response(JSON.stringify({ error: "Session not found" }), {
       status: 404,
     });
   }
 
   // Check expiry
   if (Date.now() > session.expiresAt) {
-    await store.delete(sessionId);
-    return new Response(JSON.stringify({ error: 'Session expired' }), {
+    await deleteSession(sessionId);
+    return new Response(JSON.stringify({ error: "Session expired" }), {
       status: 410,
     });
   }
 
-  return new Response(JSON.stringify({
-    publicKey: session.recipientPublicKey,
-    status: session.status,
-    fileName: session.fileName,
-    fileSize: session.fileSize
-  }), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+  return new Response(
+    JSON.stringify({
+      recipientPublicKey: session.recipientPublicKey,
+      status: session.status,
+      senderPublicKey: session.senderPublicKey,
+      nonce: session.nonce,
+      mimeType: session.mimeType,
+      fileName: session.fileName,
+      fileSize: session.fileSize,
+    }),
+    {
+      headers: {
+        "Content-Type": "application/json",
+        // "Access-Control-Allow-Origin": "*",
+      },
     }
-  });
-};
+  );
+}
 
 export const config: Config = {
   path: "/api/get-session/:sessionId",

@@ -1,4 +1,4 @@
-import type { CreateSessionResponse, SessionResponse, UploadUrlResponse } from "@/types/api";
+import type { CreateSessionResponse, SessionResponse, UploadUrlPayload, UploadUrlResponse } from "@/types/api";
 import type { EncryptedFile, EncryptedFileMetadata } from "@/types/data";
 import { useCallback } from "react";
 
@@ -10,10 +10,10 @@ export function useApi() {
     return (await response.json()) as SessionResponse;
   }, []);
 
-  const getUploadUrl = useCallback(async (sessionId: string, metadata: EncryptedFileMetadata) => {
+  const getUploadUrl = useCallback(async (sessionId: string, payload: UploadUrlPayload) => {
     const response = await fetch(`/api/get-upload-url/${sessionId}`, {
       method: 'POST',
-      body: JSON.stringify(metadata),
+      body: JSON.stringify(payload),
     });
     if (!response.ok) throw new Error('Failed to get upload URL');
     return (await response.json()) as UploadUrlResponse;

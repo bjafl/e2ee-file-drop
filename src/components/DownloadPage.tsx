@@ -36,9 +36,9 @@ export function DownloadPage() {
 
   useEffect(() => {
     if (!sessionId) {
-      
-      // setError('Ingen session ID i URL');
-      // setStatus('error');
+      //TODO! find from storage
+      setError('Ingen session ID i URL');
+      setStatus('error');
       return;
     }
     const privateKey = storedKeys[sessionId]?.myPrivateKey;
@@ -52,7 +52,7 @@ export function DownloadPage() {
     const checkStatus = async () => {
 
 
-      setStatus('checking');
+      // setStatus('checking');
       setError(null);
       try {
         const data = await getSession(sessionId);

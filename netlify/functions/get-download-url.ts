@@ -1,29 +1,9 @@
 import { Config, Context } from "@netlify/edge-functions";
-import { getStore } from "@netlify/blobs";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { getBucketClient } from "./lib/b2";
+import { getSession, saveSession } from "./lib/netlifyBlob";
 
-const b2 = new S3Client({
-  region: process.env.B2_REGION!,
-  endpoint: process.env.B2_ENDPOINT!,
-  credentials: {
-    accessKeyId: process.env.B2_KEY_ID!,
-    secretAccessKey: process.env.B2_APPLICATION_KEY!,
-  },
-  requestChecksumCalculation: 'WHEN_REQUIRED'
-});
-
-interface Session {
-  senderPublicKey?: string;
-  recipientPublicKey: string;
-  expiresAt: number;
-  status: 'waiting' | 'uploading' | 'uploaded' | 'downloaded';
-  nonce?: string;
-  mimeType?: string;
-  s3Key?: string;
-  fileSize?: number;
-  fileName?: string;
-}
 export default async (request: Request, context: Context) => {
   const sessionId = context.params?.sessionId;
 
@@ -33,18 +13,20 @@ export default async (request: Request, context: Context) => {
     });
   }
 
-  const store = getStore("sessions");
-  const session = (await store.get(sessionId, {
-    type: "json",
-  })) as Session | null;
-
-  if (!session || session.status !== "uploaded") {
-    return new Response(JSON.stringify({ error: "No file available" }), {
+  const session = await getSession(sessionId);
+  if (!session) {
+    return new Response(JSON.stringify({ error: "Could not find session" }), {
       status: 404,
+    });
+  }
+  if (session.status == "waiting" || session.status == "uploading") {
+    return new Response(JSON.stringify({ error: "File not ready for download" }), {
+      status: 403,
     });
   }
 
   // Generate presigned GET URL (10 min expiry)
+  const b2 = getBucketClient();
   const downloadUrl = await getSignedUrl(
     b2,
     new GetObjectCommand({
@@ -56,7 +38,7 @@ export default async (request: Request, context: Context) => {
 
   // Mark as downloaded
   session.status = "downloaded";
-  await store.setJSON(sessionId, session);
+  await saveSession(sessionId, session); //TODO: add downloading state?
 
   return new Response(
     JSON.stringify({
@@ -67,7 +49,7 @@ export default async (request: Request, context: Context) => {
     {
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+        // "Access-Control-Allow-Origin": "*",
       },
     }
   );
