@@ -88,13 +88,7 @@ export function DownloadPage() {
     };
 
     loadSessions();
-  }, [
-    sessionIdParam,
-    storedValues,
-    getSession,
-    removeIdsFromBrowserStorage,
-    t,
-  ]);
+  }, [sessionIdParam, storedValues, getSession, removeIdsFromBrowserStorage, t, ignoreBrowserStorageUpdate]);
 
   const handleSessionDeleted = (sessionId: string) => {
     removeIdsFromBrowserStorage(sessionId); // refreshes list
