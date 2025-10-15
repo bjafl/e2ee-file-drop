@@ -59,7 +59,7 @@ export async function getSignedUploadUrl(session: Session, expiresIn=600) {
       hoistableHeaders: new Set([
         // "content-type",
         // "content-length",
-        "content-md5",
+        // "content-md5",
         "x-amz-meta-filename",
         "x-amz-meta-nonce",
         "x-amz-meta-publickey",
