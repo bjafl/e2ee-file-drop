@@ -60,14 +60,14 @@ export default async (request: Request, context: Context) => {
     !metadata.fileSize ||
     !metadata.nonce ||
     !metadata.mimeType ||
-    !metadata.contentMD5
+    !metadata.contentSHA256
   ) {
     return new Response(JSON.stringify({ error: "Missing metadata" }), {
       status: 400,
     });
   }
 
-  const { fileName, fileSize, nonce, mimeType, contentMD5 } = metadata;
+  const { fileName, fileSize, nonce, mimeType, contentSHA256 } = metadata;
  
 
   // Size limit
@@ -90,7 +90,7 @@ export default async (request: Request, context: Context) => {
   session.fileSize = fileSize;
   session.nonce = nonce;
   session.mimeType = mimeType;
-  session.contentMD5 = contentMD5;
+  session.contentSHA256 = contentSHA256;
 
   const result = await saveSession(sessionId, session);
   if (result === null) {
