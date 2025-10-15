@@ -16,7 +16,7 @@ export interface EncryptedFileMetadata {
   fileSize: number;
   nonce: string;
   mimeType: string;
-  contentSHA256: string; // base64
+  contentMD5: string; // base64
   senderPublicKey?: string; // base64
 }
 

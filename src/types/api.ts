@@ -12,7 +12,7 @@ export interface UploadUrlPayload {
     fileSize: number;
     nonce: string;
     mimeType: string;
-    contentSHA256: string;
+    contentMD5: string;
   };
 }
 
