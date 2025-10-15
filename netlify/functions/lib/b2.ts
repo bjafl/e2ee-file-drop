@@ -53,7 +53,13 @@ export async function getSignedUploadUrl(session: Session, expiresIn=600) {
     {
       expiresIn,
       // unhoistableHeaders: new Set(["content-length"]), // TODO: also sign content-length to enforce size limit
-      // signableHeaders: new Set(["content-type"]), // Include content-type in signature
+      hoistableHeaders: new Set([
+        "content-type",
+        "x-amz-meta-filename",
+        "x-amz-meta-nonce",
+        "x-amz-meta-publickey",
+        "x-amz-meta-mimetype",
+      ]), // Include content-type in signature
     }
   );
   return url;
