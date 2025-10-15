@@ -8,8 +8,10 @@ import { useApi } from '@/hooks/useApi';
 import { DownloadFileCard } from './DownloadFileCard';
 import { SessionList } from './SessionList';
 import type { SessionInfo } from '@/types/api';
+import { useTranslation } from 'react-i18next';
 
 export function DownloadPage() {
+  const { t } = useTranslation();
   const { sessionId: sessionIdParam } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -67,14 +69,14 @@ export function DownloadPage() {
         setSessions(validSessions);
       } catch (err) {
         console.error('Error loading sessions:', err);
-        setError('Kunne ikke laste økter');
+        setError(t('downloadPage.errors.loadSessionsFailed'));
       } finally {
         setIsLoading(false);
       }
     };
 
     loadSessions();
-  }, [sessionIdParam, storedValues, getSession, removeIdsFromBrowserStorage]);
+  }, [sessionIdParam, storedValues, getSession, removeIdsFromBrowserStorage, t]);
 
   // Single session view
   if (sessionIdParam) {
@@ -86,8 +88,7 @@ export function DownloadPage() {
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Privat nøkkel ikke funnet for denne økten. Kan ikke dekryptere
-                  filen.
+                  {t('downloadPage.missingPrivateKeyDescription')}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -143,10 +144,10 @@ export function DownloadPage() {
               <Inbox className="w-12 h-12 mx-auto text-muted-foreground" />
               <div>
                 <p className="text-lg font-medium text-slate-700">
-                  Ingen ventende nedlastinger
+                  {t('downloadPage.noSessionsTitle')}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Når noen sender deg en fil vil den dukke opp her
+                  {t('downloadPage.noSessionsDescription')}
                 </p>
               </div>
             </CardContent>
@@ -154,7 +155,7 @@ export function DownloadPage() {
         ) : (
           <SessionList
             sessions={sessions}
-            title="Dine økter"
+            title={t('downloadPage.sessionListTitle')}
             showFilters={sessions.length > 5}
           />
         )}

@@ -1,0 +1,112 @@
+{
+  "unknown": "Unknown",
+  "encrypted": "Encrypted",
+  "expired": "Expired",
+  "error": "Error",
+  "session": "session",
+  "sessionPlural": "sessions",
+  "of": "of",
+  "all": "All",
+  "download": "Download",
+
+  "progress": "Progress",
+  "pleaseWait": "Please wait...",
+  "errorTitle": "Something went wrong",
+  "sessionItem": {
+    "fileName": "File Name",
+    "mimeType": "MIME Type",
+    "fileSize": "File Size",
+    "senderPublicKey": "Sender Public Key",
+    "expiresAt": "Expires At"
+  },
+  "status": {
+    "waiting": "Waiting",
+    "uploading": "Uploading",
+    "uploaded": "Uploaded",
+    "decrypting": "Decrypting",
+    "decrypted": "Decrypted",
+    "downloading": "Downloading",
+    "downloaded": "Downloaded",
+    "encrypting": "Encrypting",
+    "noSessions": "No sessions found."
+  },
+  "downloadFileCard": {
+    "title": "Receive Encrypted Files",
+    "description": "Files are decrypted in your browser after download. No unencrypted data leaves your or sender's device.",
+    "checkingStatus": "Checking status...",
+    "decrypt": "Decrypt",
+    "downloading": "Downloading...",
+    "decrypting": "Decrypting...",
+    "waitingForUploadTitle": "Waiting for sender to upload the file...",
+    "waitingForUploadDescription": "The page will refresh automatically and notify you when the file is ready.",
+    "sessionIdBadge": "Session# {{sessionId}}...",
+    "fileReadyTitle": "File Ready for Download",
+    "downloadAndDecrypt": "Download and Decrypt",
+    "endToEndEncryptionNote": "The file is decrypted locally in your browser. No one can read the content during transfer.",
+    "completedNote": "File downloaded and decrypted! Check your downloads folder.",
+    "errors": {
+      "sessionNotFound": "Couldn't find session with ID {{sessionId}}.",
+      "unknown": "Unknown error"
+    }
+  },
+  "downloadPage": {
+    "title": "Receive Files",
+    "sessionListTitle": "Your Sessions",
+    "loadingSessions": "Loading sessions...",
+    "noSessionsTitle": "No sessions found.",
+    "noSessionsDescription": "Go back to the homepage to create a new session.",
+    "missingPrivateKeyDescription": "Private key not found for this session. Cannot decrypt the file.",
+    "errors": {
+      "loadSessionsFailed": "Failed to load sessions."
+    }
+  },
+  "createSessionPage": {
+    "title": "Receive file",
+    "description": "Files are encrypted in your browser before upload. No unencrypted data leaves your device.",
+    "createSession": "Create Session",
+    "creatingSession": "Creating Session...",
+    "errors": {
+      "createSessionFailed": "Failed to create session.",
+      "keyGenerationFailed": "Failed to generate encryption keys.",
+      "unknown": "Unknown error"
+    },
+    "share": {
+      "title": "Share this link with the recipient",
+      "text": "Use the link below to send me an encrypted file. The file is encrypted in your browser before sending, and decrypted locally on my device. No unencrypted data leaves your device."
+    },
+    "shareDescription": "Share this link with the recipient to allow them to upload a file to this session. The file is encrypted in their browser before sending, and decrypted locally on your device. No unencrypted data leaves either of your devices.",
+    "status": {
+      "generatingKeys": "Generating encryption keys..."
+    },
+    "linkTitle": "Session Share Link:",
+    "copied": "Copied!",
+    "copyLink": "Copy Link",
+    "shareBtn": "Share",
+    "receiveNote": "<1>Important:</1> The key to decrypt the file is stored locally in your browser. If your browser data is deleted, you will lose the key and cannot open the file uploaded by the sender. You will also not be able to download the file using a different browser than the one you are currently using. It is recommended to keep this page open until you have downloaded the file from the sender.",
+    "goToDownloadPage": "Go to Download Page"
+  },
+  "uploadFileCard": {
+    "title": "Send Encrypted Files",
+    "description": "Files are encrypted in your browser before upload. No unencrypted data leaves your device.",
+    "selectFiles": "Select Files",
+    "orDragAndDrop": "or drag and drop here",
+    "selectedFiles": "{{count}} file selected",
+    "selectedFiles_plural": "{{count}} files selected",
+    "startUpload": "Start Upload",
+    "encrypting": "Encrypting...",
+    "uploading": "Uploading...",
+    "completed": "Upload Completed!",
+    "copyLink": "Copy Link",
+    "linkCopied": "Link Copied!",
+    "shareLinkNote": "Share this link with the recipient to allow them to download the file.",
+    "privateKeyNote": "The private key is needed to decrypt the file. It is stored only in your browser's local storage.",
+    "errors": {
+      "fileTooLarge": "File \"{{fileName}}\" is too large (max {{maxFileSizeMB}} MB).",
+      "unsupportedFileType": "File \"{{fileName}}\" has an outdated or unsupported file type.",
+      "noFilesSelected": "No files selected.",
+      "encryptionFailed": "Encryption failed for file \"{{fileName}}\".",
+      "uploadFailed": "Upload failed for file \"{{fileName}}\".",
+      "unknown": "Unknown error"
+    }
+  }
+}

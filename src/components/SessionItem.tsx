@@ -5,6 +5,7 @@ import type { SessionInfo, SessionStatus } from "@/types/api";
 import { Hash, Key, Calendar, File, FileType, HardDrive } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { cn, formatFileSize } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export const SessionItem: FC<SessionInfo> = ({
   sessionId,
@@ -15,15 +16,16 @@ export const SessionItem: FC<SessionInfo> = ({
   mimeType,
   fileSize,
 }) => {
+  const { t } = useTranslation();
   const formattedDate = useMemo(() => {
     try {
       return formatDate(new Date(expiresAt), "dd.MM.yyyy HH:mm:ss");
     } catch {
-      return "Ukjent";
+      return t("unknown");
     }
-  }, [expiresAt]);
+  }, [expiresAt, t]);
 
-  const getStatusVariant = (status?: SessionStatus) => {
+  const getStatusBadgeVariant = (status?: SessionStatus) => {
     switch (status) {
       case "uploaded":
         return "default";
@@ -38,7 +40,7 @@ export const SessionItem: FC<SessionInfo> = ({
     }
   };
 
-  const getStatusColor = (status?: SessionStatus) => {
+  const getStatusBadgeColor = (status?: SessionStatus) => {
     switch (status) {
       case "uploaded":
         return "text-green-600";
@@ -61,8 +63,8 @@ export const SessionItem: FC<SessionInfo> = ({
             <h2 className="text-lg font-semibold">{sessionId}</h2>
           </div>
           <Badge
-            variant={getStatusVariant(status)}
-            className={cn("capitalize", getStatusColor(status))}
+            variant={getStatusBadgeVariant(status)}
+            className={cn("capitalize", getStatusBadgeColor(status))}
           >
             {status}
           </Badge>
@@ -74,7 +76,7 @@ export const SessionItem: FC<SessionInfo> = ({
             <File className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-muted-foreground">
-                File Name
+                {t("sessionItem.fileName")}
               </p>
               <p className="text-sm truncate" title={fileName}>
                 {fileName}
@@ -87,7 +89,7 @@ export const SessionItem: FC<SessionInfo> = ({
             <FileType className="h-4 w-4 text-muted-foreground" />
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                MIME Type
+                {t("sessionItem.mimeType")}
               </p>
               <p className="text-sm font-mono">{mimeType}</p>
             </div>
@@ -98,7 +100,7 @@ export const SessionItem: FC<SessionInfo> = ({
             <HardDrive className="h-4 w-4 text-muted-foreground" />
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                File Size
+                {t("sessionItem.fileSize")}
               </p>
               <p className="text-sm">{formatFileSize(fileSize)}</p>
             </div>
@@ -109,7 +111,7 @@ export const SessionItem: FC<SessionInfo> = ({
             <Key className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-muted-foreground">
-                Sender Public Key
+                {t("sessionItem.senderPublicKey")}
               </p>
               <p className="text-sm font-mono break-all">{senderPublicKey}</p>
             </div>
@@ -119,7 +121,7 @@ export const SessionItem: FC<SessionInfo> = ({
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <div>
             <p className="text-sm font-medium text-muted-foreground">
-              Expires At
+              {t("sessionItem.expiresAt")}
             </p>
             <p className="text-sm">{formattedDate}</p>
           </div>

@@ -1,0 +1,87 @@
+{
+  "unknown": "Ukjent",
+  "encrypted": "Kryptert",
+  "expired": "Utløpt",
+  "error": "Feil",
+  "session": "økt",
+  "sessionPlural": "økter",
+  "of": "av",
+  "all": "Alle",
+  "download": "Last ned",
+  "progress": "Fremdrift",
+  "pleaseWait": "Vennligst vent...",
+  "errorTitle": "Noe gikk galt",
+  "sessionItem": {
+    "fileName": "Filnavn",
+    "mimeType": "MIME-type",
+    "fileSize": "Filstørrelse",
+    "senderPublicKey": "Offentlig nøkkel (avsender)",
+    "expiresAt": "Utløper"
+  },
+  "status": {
+    "waiting": "Venter",
+    "uploading": "Laster opp",
+    "uploaded": "Lastet opp",
+    "decrypting": "Dekrypterer",
+    "decrypted": "Dekryptert",
+    "downloading": "Laster ned",
+    "downloaded": "Lastet ned",
+    "encrypting": "Krypterer",
+    "noSessions": "Ingen økter funnet."
+  },
+  "downloadFileCard": {
+    "title": "Motta krypterte filer",
+    "description": "Filene dekrypteres i nettleseren din etter nedlasting. Ingen ukrypterte data forlater din eller senders enhet.",
+    "checkingStatus": "Sjekker status...",
+    "decrypt": "Dekrypter",
+    "downloading": "Laster ned...",
+    "decrypting": "Dekrypterer...",
+    "waitingForUploadTitle": "Venter på at avsender skal laste opp filen...",
+    "waitingForUploadDescription": "Siden oppdateres automatisk og gir beskjed når filen er klar.",
+    "sessionIdBadge": "Økt# {{sessionId}}...",
+    "fileReadyTitle": "Filen klar til nedlasting",
+    "downloadAndDecrypt": "Last ned og dekrypter",
+    "endToEndEncryptionNote": "Filen dekrypteres lokalt i nettleseren din. Ingen kan lese innholdet under overføringen.",
+    "completedNote": "Fil lastet ned og dekryptert! Sjekk nedlastingsmappen din.",
+    "errors": {
+      "sessionNotFound": "Fant ikke økt med ID {{sessionId}}.",
+      "unknown": "Ukjent feil"
+    }
+  },
+  "downloadPage": {
+    "title": "Motta filer",
+    "sessionListTitle": "Dine økter",
+    "loadingSessions": "Laster økter...",
+    "noSessionsTitle": "Ingen økter funnet.",
+    "noSessionsDescription": "Gå tilbake til startsiden for å opprette en ny økt.",
+    "missingPrivateKeyDescription": "Privat nøkkel ikke funnet for denne økten. Kan ikke dekryptere filen.",
+    "errors": {
+      "loadSessionsFailed": "Kunne ikke laste økter."
+    }
+  },
+  "createSessionPage": {
+    "title": "Motta fil",
+    "description": "Filer krypteres i nettleseren din før opplasting. Ingen ukrypterte data forlater din enhet.",
+    "createSessionButton": "Opprett ny økt",
+    "creatingSession": "Oppretter økt...",
+    "errors": {
+      "createSessionFailed": "Kunne ikke opprette økt.",
+      "keyGenerationFailed": "Kunne ikke generere krypteringsnøkler.",
+      "unknown": "Ukjent feil"
+    },
+    "share": {
+      "title": "Send meg en kryptert fil",
+      "text": "Bruk lenken under for å sende meg en kryptert fil. Filen krypteres i din nettleser før sending, og dekrypteres lokalt på min enhet. Ingen ukrypterte data forlater din enhet."
+    },
+    "shareDescription": "Del lenken med avsenderen for å motta en kryptert fil. Lenken kan bare brukes til å kryptere, og ikke til å dekryptere data. Derfor kan den trygt deles gjennom åpne kanaler.",
+    "status": {
+      "generatingKeys": "Genererer krypteringsnøkler..."
+    },
+    "linkTitle": "Delingslenke for økten:",
+    "copied": "Kopiert!",
+    "copyLink": "Kopier lenke",
+    "shareBtn": "Del",
+    "receiveNote": "<1>Viktig:</1> Nøkkelen for å dekryptere filen er lagret lokalt i din nettleser. Hvis nettleserdata slettes, mister du nøkkelen og kan ikke åpne filen som lastes opp av senderen. Du vil heller ikke kunne laste ned filen gjennom en annen nettleser enn den du er i nå. Det anbefales å holde denne siden åpen til du har lastet ned filen fra senderen.",
+    "goToDownloadPage": "Gå til nedlastingsside"
+  }
+}

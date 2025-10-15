@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { SessionItem } from './SessionItem';
 import type { SessionInfo, SessionStatus } from '@/types/api';
+import { useTranslation } from 'react-i18next';
 
 interface SessionListProps {
   sessions: Array<SessionInfo>;
@@ -23,6 +24,7 @@ export const SessionList: FC<SessionListProps> = ({
   title = 'Sessions Overview',
   showFilters = true,
 }) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<SessionStatus | 'all'>(
     'all'
@@ -59,7 +61,7 @@ export const SessionList: FC<SessionListProps> = ({
       <div className="text-center">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">{title}</h1>
         <p className="text-slate-600">
-          {filteredSessions.length} of {sessions.length} sessions
+          {filteredSessions.length} {t('of')} {sessions.length} {t('sessionPlural')}
         </p>
       </div>
 
@@ -88,18 +90,18 @@ export const SessionList: FC<SessionListProps> = ({
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All ({sessions.length})</SelectItem>
+                    <SelectItem value="all">{t('all')} ({sessions.length})</SelectItem>
                     <SelectItem value="waiting">
-                      Waiting ({statusCounts.waiting || 0})
+                      {t('status.waiting')} ({statusCounts.waiting || 0})
                     </SelectItem>
                     <SelectItem value="uploading">
-                      Uploading ({statusCounts.uploading || 0})
+                      {t('status.uploading')} ({statusCounts.uploading || 0})
                     </SelectItem>
                     <SelectItem value="uploaded">
-                      Uploaded ({statusCounts.uploaded || 0})
+                      {t('status.uploaded')} ({statusCounts.uploaded || 0})
                     </SelectItem>
                     <SelectItem value="downloaded">
-                      Downloaded ({statusCounts.downloaded || 0})
+                      {t('status.downloaded')} ({statusCounts.downloaded || 0})
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -112,7 +114,7 @@ export const SessionList: FC<SessionListProps> = ({
       {filteredSessions.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">No sessions found</p>
+            <p className="text-muted-foreground">{t('status.noSessions')}</p>
           </CardContent>
         </Card>
       ) : (

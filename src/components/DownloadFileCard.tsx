@@ -9,10 +9,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useApi } from '@/hooks/useApi';
 import { useFileEncryption } from '@/hooks/useFileEncryption';
+import { useTranslation } from 'react-i18next';
 
 type Status =
   | 'checking'
@@ -34,6 +35,7 @@ export function DownloadFileCard({
   privateKey,
   onComplete,
 }: DownloadFileCardProps) {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<Status>('checking');
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export function DownloadFileCard({
         }
       } catch (err) {
         console.error(err);
-        setError('Fant ikke status for økt med ID: ' + sessionId);
+        setError(t('downloadFileCard.errors.sessionNotFound', { sessionId }));
         setStatus('error');
       }
     };
@@ -116,7 +118,7 @@ export function DownloadFileCard({
       setStatus('complete');
       onComplete?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Noe gikk galt');
+      setError(err instanceof Error ? err.message : t('downloadFileCard.errors.unknown'));
       setStatus('error');
       setProgress(0);
     }
@@ -135,16 +137,16 @@ export function DownloadFileCard({
       <CardHeader>
         <CardTitle className="text-2xl flex items-center gap-2">
           <Lock className="w-6 h-6" />
-          Motta kryptert fil
+          {t('downloadFileCard.title')}
         </CardTitle>
-        <CardDescription>Filen dekrypteres i nettleseren din</CardDescription>
+        <CardDescription>{t('downloadFileCard.description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Checking status */}
         {status === 'checking' && (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Loader2 className="w-8 h-8 animate-spin text-slate-600" />
-            <p className="text-slate-600">Sjekker status...</p>
+            <p className="text-slate-600">{t('downloadFileCard.checkingStatus')}</p>
           </div>
         )}
 
@@ -156,14 +158,14 @@ export function DownloadFileCard({
             </div>
             <div className="text-center">
               <p className="text-lg font-medium text-slate-700">
-                Venter på fil...
+                {t('downloadFileCard.waitingForUploadTitle')}
               </p>
               <p className="text-sm text-slate-500 mt-1">
-                Siden oppdateres automatisk når filen er klar
+                {t('downloadFileCard.waitingForUploadDescription')}
               </p>
             </div>
             <Badge variant="outline" className="mt-2">
-              Session ID: {sessionId.slice(0, 8)}...
+              {t('downloadFileCard.sessionIdBadge', { sessionId: sessionId.slice(0, 8) })}
             </Badge>
           </div>
         )}
@@ -177,7 +179,7 @@ export function DownloadFileCard({
               </div>
               <div className="flex-1">
                 <p className="font-medium text-green-900">
-                  Fil klar til nedlasting
+                  {t('downloadFileCard.fileReadyTitle')}
                 </p>
                 {fileName && (
                   <p className="text-sm text-green-700 mt-1 font-mono">
@@ -194,14 +196,13 @@ export function DownloadFileCard({
 
             <Button onClick={handleDownload} className="w-full" size="lg">
               <Download className="w-4 h-4 mr-2" />
-              Last ned og dekrypter
+              {t('downloadFileCard.downloadAndDecrypt')}
             </Button>
 
             <Alert>
               <Lock className="h-4 w-4" />
               <AlertDescription>
-                Filen dekrypteres lokalt i nettleseren din. Ingen kan lese
-                innholdet under overføringen.
+                {t('downloadFileCard.endToEndEncryptionNote')}
               </AlertDescription>
             </Alert>
           </div>
@@ -215,16 +216,16 @@ export function DownloadFileCard({
               <div className="text-center">
                 <p className="font-medium text-slate-700">
                   {status === 'downloading'
-                    ? 'Laster ned...'
-                    : 'Dekrypterer...'}
+                    ? t('downloadFileCard.downloading')
+                    : t('downloadFileCard.decrypting')}
                 </p>
-                <p className="text-sm text-slate-500 mt-1">Vennligst vent</p>
+                <p className="text-sm text-slate-500 mt-1">{t('pleaseWait')}</p>
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-slate-600">
-                <span>Fremdrift</span>
+                <span>{t('progress')}</span>
                 <span>{progress}%</span>
               </div>
               <Progress value={progress} className="h-2" />
@@ -237,7 +238,7 @@ export function DownloadFileCard({
           <Alert className="border-green-200 bg-green-50">
             <FileCheck className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              Fil lastet ned og dekryptert! Sjekk nedlastingsmappen din.
+              {t('downloadFileCard.completedNote')}
             </AlertDescription>
           </Alert>
         )}
@@ -246,6 +247,7 @@ export function DownloadFileCard({
         {error && status === 'error' && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
+            <AlertTitle>{t('errorTitle')}</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}

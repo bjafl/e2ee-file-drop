@@ -1,5 +1,5 @@
 // components/CreateSession.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, Share2, Copy, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,43 +14,64 @@ import nacl from "tweetnacl";
 import { useBrowserStorage } from "@/hooks/useBrowserStorage";
 import { useApi } from "@/hooks/useApi";
 import { encodeBase64 } from "tweetnacl-util";
-
+import { Trans, useTranslation } from "react-i18next";
 
 export function CreateSession() {
+  const { t } = useTranslation();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [creating, setCreating] = useState(true);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [privateKey, setPrivateKey] = useState<string | null>(null);
-  const {
-    setValue: setLocalStoragePrivateKey,
-  } = useBrowserStorage();
+  const { setValue: setLocalStoragePrivateKey } = useBrowserStorage();
   const { createSession: apiCreateSession } = useApi();
+
+  const newKeypair = useCallback(() => {
+    try {
+      const keys = nacl.box.keyPair();
+      setPrivateKey(encodeBase64(keys.secretKey));
+      return encodeBase64(keys.publicKey);
+    } catch (error) {
+      console.error("Error generating key pair:", error);
+      return null;
+    }
+  }, []);
+
+  const newSession = useCallback(async (publicKey: string) => {
+    try {
+      const response = await apiCreateSession(publicKey);
+      return response.sessionId;
+    } catch (error) {
+      console.error("Error creating session:", error);
+      return null;
+    }
+  }, [apiCreateSession]);
 
   useEffect(() => {
     if (sessionId) return;
     async function createSession() {
-      try {
-        // Generate key pair
-        const keys = nacl.box.keyPair();
+      setCreating(true);
+      setError(null);
 
-
-        // Send public key to server
-        const publicKeyBase64 = encodeBase64(keys.publicKey);
-        const response = await apiCreateSession(publicKeyBase64);
-        const newSessionId = response.sessionId;
-
-        setSessionId(newSessionId);
-        setPrivateKey(encodeBase64(keys.secretKey));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Noe gikk galt");
-      } finally {
+      const publicKey = newKeypair();
+      if (!publicKey) {
+        setError(t("createSessionPage.errors.keyGenerationFailed"));
         setCreating(false);
+        return;
       }
+
+      const sessionId = await newSession(publicKey);
+      if (!sessionId) {
+        setError(t("createSessionPage.errors.createSessionFailed"));
+        setCreating(false);
+        return;
+      }
+      setSessionId(sessionId);
+      setCreating(false);
     }
 
     createSession();
-  }, [apiCreateSession, sessionId]);
+  }, [apiCreateSession, newKeypair, newSession, sessionId, t]);
 
   useEffect(() => {
     if (!sessionId || !privateKey) return;
@@ -71,8 +92,8 @@ export function CreateSession() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Send meg en kryptert fil",
-          text: "Bruk denne lenken for å sende meg en kryptert fil",
+          title: t("createSessionPage.shareTitle"),
+          text: t("createSessionPage.shareText"),
           url: shareUrl,
         });
       } catch (err) {
@@ -85,16 +106,18 @@ export function CreateSession() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 flex items-center justify-center">
       <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle className="text-2xl">Motta fil</CardTitle>
+          <CardTitle className="text-2xl">{t("createSessionPage.title")}</CardTitle>
           <CardDescription>
-            Del lenken med avsenderen for å motta en kryptert fil
+            {t("createSessionPage.shareDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {creating && (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
               <Loader2 className="w-8 h-8 animate-spin text-slate-600" />
-              <p className="text-slate-600">Genererer krypteringsnøkler...</p>
+              <p className="text-slate-600">
+                {t("createSessionPage.status.generatingKeys")}
+              </p>
             </div>
           )}
 
@@ -106,7 +129,7 @@ export function CreateSession() {
                     <Link className="w-5 h-5 text-slate-600 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-slate-500 mb-2">
-                        Din unike lenke:
+                        {t("createSessionPage.linkTitle")}
                       </p>
                       <p className="font-mono text-sm break-all text-slate-900">
                         {shareUrl}
@@ -124,12 +147,12 @@ export function CreateSession() {
                     {copied ? (
                       <>
                         <Check className="w-4 h-4 mr-2" />
-                        Kopiert!
+                        {t("createSessionPage.copied")}!
                       </>
                     ) : (
                       <>
                         <Copy className="w-4 h-4 mr-2" />
-                        Kopier lenke
+                        {t("createSessionPage.copyLink")}
                       </>
                     )}
                   </Button>
@@ -141,7 +164,7 @@ export function CreateSession() {
                       className="flex-1"
                     >
                       <Share2 className="w-4 h-4 mr-2" />
-                      Del
+                      {t("createSessionPage.shareBtn")}
                     </Button>
                   )}
                 </div>
@@ -149,9 +172,10 @@ export function CreateSession() {
 
               <Alert>
                 <AlertDescription className="text-sm">
-                  <strong>Viktig:</strong> Hold denne siden åpen til du har
-                  mottatt filen. Krypteringsnøklene lagres kun i nettleseren
-                  din.
+                  <Trans
+                    i18nKey="createSessionPage.linkNote"
+                    components={{ 1: <strong className="font-medium" /> }}
+                  />
                 </AlertDescription>
               </Alert>
 
@@ -163,7 +187,7 @@ export function CreateSession() {
                     (window.location.href = `/download/${sessionId}`)
                   }
                 >
-                  Gå til nedlastingsside →
+                  {t("createSessionPage.goToDownloadPage")} →
                 </Button>
               </div>
             </>
