@@ -42,11 +42,11 @@ export function useApi() {
     // const sessionId = blobResponse.headers.get('x-amz-meta-sessionid');
     // const encrypted = blobResponse.headers.get('x-amz-meta-encrypted');
     const metadata: EncryptedFileMetadata = {
-      fileName: blobResponse.headers.get('X-Amz-Meta-FileName') || '',
+      fileName: blobResponse.headers.get('x-amz-meta-filename') || '',
       fileSize: parseInt(blobResponse.headers.get('Content-Length') || '0', 10),
-      nonce: blobResponse.headers.get('X-Amz-Meta-Nonce') || '',
-      mimeType: blobResponse.headers.get('X-Amz-Meta-MimeType') || 'application/octet-stream',
-      senderPublicKey: blobResponse.headers.get('X-Amz-Meta-PublicKey') || '',
+      nonce: blobResponse.headers.get('x-amz-meta-nonce') || '',
+      mimeType: blobResponse.headers.get('x-amz-meta-mimetype') || 'application/octet-stream',
+      senderPublicKey: blobResponse.headers.get('x-amz-meta-publickey') || '',
       contentMD5: blobResponse.headers.get('ContentMD5') || '',
     };
 

@@ -41,10 +41,10 @@ export async function getSignedUploadUrl(session: Session, expiresIn=600) {
       ContentLength: session.fileSize,
       ContentMD5: session.contentMD5,
       Metadata: {
-        FileName: session.fileName || "",
-        Nonce: session.nonce || "",
-        PublicKey: session.senderPublicKey || "",
-        MimeType: session.mimeType || "",
+        filename: session.fileName || "",
+        nonce: session.nonce || "",
+        publickey: session.senderPublicKey || "",
+        mimetype: session.mimeType || "",
       },
   });
   const url = await getSignedUrl(
@@ -53,13 +53,13 @@ export async function getSignedUploadUrl(session: Session, expiresIn=600) {
     {
       expiresIn,
       hoistableHeaders: new Set([
-        "Content-Type",
-        "Content-Length",
-        "Content-MD5",
-        "X-Amz-Meta-FileName",
-        "X-Amz-Meta-Nonce",
-        "X-Amz-Meta-PublicKey",
-        "X-Amz-Meta-MimeType",
+        "content-type",
+        "content-length",
+        "content-md5",
+        "x-amz-meta-filename",
+        "x-amz-meta-nonce",
+        "x-amz-meta-publickey",
+        "x-amz-meta-mimetype",
       ]), // Include content-type in signature
     }
   );

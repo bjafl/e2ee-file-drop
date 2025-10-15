@@ -131,13 +131,13 @@ console.log()
         method: "PUT",
         body: encryptedBlob.encrypted,
         headers: {
-          "Content-Type": "application/octet-stream",
-          // 'Content-Length': String(encryptedSize),
-          "Content-MD5": encryptedBlob.contentMD5,
-          "X-Amz-Meta-FileName": file.name,
-          "X-Amz-Meta-Nonce": encryptedBlob.nonce,
-          "X-Amz-Meta-PublicKey": publicKey,
-          "X-Amz-Meta-MimeType": file.type,
+          "content-type": "application/octet-stream",
+          "content-length": String(encryptedSize),
+          "content-md5": encryptedBlob.contentMD5,
+          "x-amz-meta-filename": file.name,
+          "x-amz-meta-nonce": encryptedBlob.nonce,
+          "x-amz-meta-publickey": publicKey,
+          "x-amz-meta-mimetype": file.type,
         },
       });
 
