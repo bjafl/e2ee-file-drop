@@ -37,8 +37,8 @@ export async function getSignedUploadUrl(session: Session, expiresIn=600) {
   const command = new PutObjectCommand({
       Bucket: process.env.B2_BUCKET!,
       Key: session.s3Key!,
-      ContentType: "application/octet-stream",
-      ContentLength: session.fileSize,
+      // ContentType: "application/octet-stream",
+      // ContentLength: session.fileSize,
       ContentMD5: session.contentMD5,
       Metadata: {
         filename: session.fileName || "",
