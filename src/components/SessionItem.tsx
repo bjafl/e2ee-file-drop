@@ -211,8 +211,7 @@ export const SessionItem: FC<SessionInfo & { onDeleted: () => void }> = ({
         </CardContent>
       </Card>
 
-      {state !== "normal" && (
-        <Card className="absolute inset-0 bg-background/80 backdrop-blur-sm pointer-events-none w-full h-full">
+        <Card className={cn(state == "normal" ? "hidden" : "", "absolute inset-0 bg-background/80 backdrop-blur-sm pointer-events-none w-full h-full")}>
           <CardContent className="text-center text-sm text-slate-500 py-10">
             {state === "deleted" ? (
               <>
@@ -231,7 +230,6 @@ export const SessionItem: FC<SessionInfo & { onDeleted: () => void }> = ({
 
           </CardContent>
         </Card>
-      )}
     </div>
   );
 };
