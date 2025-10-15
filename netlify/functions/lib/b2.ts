@@ -41,10 +41,10 @@ export async function getSignedUploadUrl(session: Session, expiresIn=600) {
       ContentLength: session.fileSize,
       ContentMD5: session.contentMD5,
       Metadata: {
-        fileName: session.fileName || "",
-        nonce: session.nonce || "",
-        publicKey: session.senderPublicKey || "",
-        mimeType: session.mimeType || "",
+        FileName: session.fileName || "",
+        Nonce: session.nonce || "",
+        PublicKey: session.senderPublicKey || "",
+        MimeType: session.mimeType || "",
       },
   });
   const url = await getSignedUrl(
