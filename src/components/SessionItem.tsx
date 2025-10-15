@@ -1,10 +1,10 @@
-import { useMemo, type FC } from 'react';
-import { Card, CardContent, CardHeader } from './ui/card';
-import { format as formatDate } from 'date-fns';
-import type { SessionInfo, SessionStatus } from '@/types/api';
-import { Hash, Key, Calendar, File, FileType, HardDrive } from 'lucide-react';
-import { Badge } from './ui/badge';
-import { cn, formatFileSize } from '@/lib/utils';
+import { useMemo, type FC } from "react";
+import { Card, CardContent, CardHeader } from "./ui/card";
+import { format as formatDate } from "date-fns";
+import type { SessionInfo, SessionStatus } from "@/types/api";
+import { Hash, Key, Calendar, File, FileType, HardDrive } from "lucide-react";
+import { Badge } from "./ui/badge";
+import { cn, formatFileSize } from "@/lib/utils";
 
 export const SessionItem: FC<SessionInfo> = ({
   sessionId,
@@ -15,38 +15,41 @@ export const SessionItem: FC<SessionInfo> = ({
   mimeType,
   fileSize,
 }) => {
-  const formattedDate = useMemo(
-    () => formatDate(new Date(expiresAt), 'dd.MM.yyyy HH:mm:ss'),
-    [expiresAt]
-  );
+  const formattedDate = useMemo(() => {
+    try {
+      return formatDate(new Date(expiresAt), "dd.MM.yyyy HH:mm:ss");
+    } catch {
+      return "Ukjent";
+    }
+  }, [expiresAt]);
 
   const getStatusVariant = (status?: SessionStatus) => {
     switch (status) {
-      case 'uploaded':
-        return 'default';
-      case 'downloaded':
-        return 'secondary';
-      case 'uploading':
-        return 'outline';
-      case 'waiting':
-        return 'outline';
+      case "uploaded":
+        return "default";
+      case "downloaded":
+        return "secondary";
+      case "uploading":
+        return "outline";
+      case "waiting":
+        return "outline";
       default:
-        return 'outline';
+        return "outline";
     }
   };
 
   const getStatusColor = (status?: SessionStatus) => {
     switch (status) {
-      case 'uploaded':
-        return 'text-green-600';
-      case 'downloaded':
-        return 'text-blue-600';
-      case 'uploading':
-        return 'text-yellow-600';
-      case 'waiting':
-        return 'text-gray-600';
+      case "uploaded":
+        return "text-green-600";
+      case "downloaded":
+        return "text-blue-600";
+      case "uploading":
+        return "text-yellow-600";
+      case "waiting":
+        return "text-gray-600";
       default:
-        return 'text-gray-600';
+        return "text-gray-600";
     }
   };
   return (
@@ -59,7 +62,7 @@ export const SessionItem: FC<SessionInfo> = ({
           </div>
           <Badge
             variant={getStatusVariant(status)}
-            className={cn('capitalize', getStatusColor(status))}
+            className={cn("capitalize", getStatusColor(status))}
           >
             {status}
           </Badge>

@@ -16,7 +16,7 @@ export function DownloadPage() {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { storedValues } = useBrowserStorage();
+  const { storedValues, removeValue: removeIdsFromBrowserStorage } = useBrowserStorage();
   const { getSession } = useApi();
 
   // If sessionId in URL, show single download card
@@ -40,14 +40,13 @@ export function DownloadPage() {
         });
 
         // Fetch session info for each
-        const sessionPromises = validSessionIds.map(async (sessionId) => {
+        const invalidSessionIds: string[] = [];
+        const sessionPromises: Promise<SessionInfo | null>[] = validSessionIds.map(async (sessionId) => {
           try {
             const data = await getSession(sessionId);
             return {
               sessionId,
-              expiresAt: new Date(
-                storedValues[sessionId].expiresAt
-              ).toISOString(),
+              expiresAt: storedValues[sessionId].expiresAt,
               status: data.status,
               senderPublicKey: data.senderPublicKey,
               mimeType: data.mimeType,
@@ -55,18 +54,16 @@ export function DownloadPage() {
               fileName: data.fileName,
             };
           } catch (err) {
+            invalidSessionIds.push(sessionId);
             console.error(`Failed to fetch session ${sessionId}:`, err);
             return null;
           }
         });
 
+        removeIdsFromBrowserStorage(...invalidSessionIds);
         const results = await Promise.all(sessionPromises);
         const validSessions = results
-          .filter((s) => s !== null)
-          .map((s) => {
-            return { ...s, expiresAt: Number(s.expiresAt) } as SessionInfo;
-          });
-
+          .filter((s) => s !== null);
         setSessions(validSessions);
       } catch (err) {
         console.error('Error loading sessions:', err);
@@ -77,7 +74,7 @@ export function DownloadPage() {
     };
 
     loadSessions();
-  }, [sessionIdParam, storedValues, getSession]);
+  }, [sessionIdParam, storedValues, getSession, removeIdsFromBrowserStorage]);
 
   // Single session view
   if (sessionIdParam) {
