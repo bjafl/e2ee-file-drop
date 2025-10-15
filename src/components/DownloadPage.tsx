@@ -28,9 +28,6 @@ export function DownloadPage() {
     if (sessionIdParam) return; // Don't load list if showing single session
 
     const loadSessions = async () => {
-      setIsLoading(true);
-      setError(null);
-
       try {
         const sessionIds = Object.keys(storedValues);
 
@@ -67,6 +64,7 @@ export function DownloadPage() {
         const validSessions = results
           .filter((s) => s !== null);
         setSessions(validSessions);
+        setError(null);
       } catch (err) {
         console.error('Error loading sessions:', err);
         setError(t('downloadPage.errors.loadSessionsFailed'));
@@ -82,7 +80,7 @@ export function DownloadPage() {
     removeIdsFromBrowserStorage(sessionId);
     deleteSession(sessionId);
   };
-  
+
   // Single session view
   if (sessionIdParam) {
     if (!selectedSession) {

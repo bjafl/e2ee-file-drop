@@ -1,13 +1,34 @@
-import { useMemo, type FC } from "react";
+import { useMemo, useState, type FC } from "react";
 import { Card, CardContent, CardHeader } from "./ui/card";
 import { format as formatDate } from "date-fns";
 import type { SessionInfo, SessionStatus } from "@/types/api";
-import { Hash, Key, Calendar, File, FileType, HardDrive, Trash2, Download } from "lucide-react";
+import {
+  Hash,
+  Key,
+  Calendar,
+  File,
+  FileType,
+  HardDrive,
+  Trash2,
+  Download,
+  X,
+} from "lucide-react";
 import { Badge } from "./ui/badge";
 import { cn, formatFileSize } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+  AlertDialogHeader,
+  AlertDialogFooter,
+} from "./ui/alert-dialog";
 
 export const SessionItem: FC<SessionInfo & { onDelete: () => void }> = ({
   sessionId,
@@ -28,6 +49,7 @@ export const SessionItem: FC<SessionInfo & { onDelete: () => void }> = ({
       return t("unknown");
     }
   }, [expiresAt, t]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getStatusBadgeVariant = (status?: SessionStatus) => {
     switch (status) {
@@ -62,6 +84,21 @@ export const SessionItem: FC<SessionInfo & { onDelete: () => void }> = ({
   const gotoDownloadPage = () => {
     navigate(`/download/${sessionId}`);
   };
+
+  const handleDelete = () => {
+    setIsDeleting(true);
+    onDelete();
+  };
+
+  if (isDeleting) {
+    return (
+      <Card className="opacity-50 pointer-events-none">
+        <CardContent className="text-center text-sm text-slate-500 py-10">
+          <X className="inline-block mr-1 text-red-700" /> {t("deleting")}...
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -139,9 +176,33 @@ export const SessionItem: FC<SessionInfo & { onDelete: () => void }> = ({
           <Button variant="outline" onClick={gotoDownloadPage}>
             <Download className="h-4 w-4" /> {t("download")}
           </Button>
-          <Button variant="ghost" onClick={onDelete} className="text-red-600 hover:bg-red-50">
-            <Trash2 className="h-4 w-4" /> {t("delete")}
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger>
+              <Button
+                variant="ghost"
+                onClick={handleDelete}
+                className="text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" /> {t("delete")}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("deleteAlert.title")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("deleteAlert.description")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>
+                  {t("deleteAlert.cancelBtn")}
+                </AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>
+                  {t("deleteAlert.confirmBtn")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </CardContent>
     </Card>

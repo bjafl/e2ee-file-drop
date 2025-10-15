@@ -8,16 +8,24 @@
   "of": "of",
   "all": "All",
   "download": "Download",
-
   "progress": "Progress",
   "pleaseWait": "Please wait...",
   "errorTitle": "Something went wrong",
+  "deleting": "Deleting",
   "sessionItem": {
     "fileName": "File Name",
     "mimeType": "MIME Type",
     "fileSize": "File Size",
     "senderPublicKey": "Sender Public Key",
-    "expiresAt": "Expires At"
+    "expiresAt": "Expires At",
+    "downloadPageBtn": "To Download Page",
+    "deleteBtn": "Delete Session",
+    "deleteAlert": {
+      "title": "Are you sure?",
+      "description": "This will delete the session and all associated information, including the private decryption key. Metadata and any encrypted data will be deleted from the server. The sender will not be able to upload a file to the session, and you will not be able to download it (again).",
+      "cancelBtn": "Cancel",
+      "confirmBtn": "Delete"
+    }
   },
   "status": {
     "waiting": "Waiting",
