@@ -20,7 +20,7 @@
     "expiresAt": "Utløper",
     "downloadPageBtn": "Til nedlastingsside",
     "deleteBtn": "Slett økt",
-
+    "deleteFailed": "Kunne ikke slette økt.",
     "deleteAlert": {
         "title": "Er du sikker?",
         "description": "Dette vil slette økten og all tilknyttet informasjon, inkludert den private dekrypteringsnøkkelen. Metadata og eventuell kryptert data vil slettes fra server. Sender vil ikke kunne laste opp fil til økten, og du vil ikke kunne laste den ned (igjen).",

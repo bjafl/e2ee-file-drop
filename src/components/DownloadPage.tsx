@@ -19,7 +19,7 @@ export function DownloadPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const { storedValues, removeValue: removeIdsFromBrowserStorage } = useBrowserStorage();
-  const { getSession, deleteSession } = useApi();
+  const { getSession } = useApi();
 
   // If sessionId in URL, show single download card
   const selectedSession = useMemo(() => {
@@ -81,8 +81,8 @@ export function DownloadPage() {
     loadSessions();
   }, [sessionIdParam, storedValues, getSession, removeIdsFromBrowserStorage, t]);
 
-  const handleDeleteSession = (sessionId: string) => {
-    deleteSession(sessionId).then(() => removeIdsFromBrowserStorage(sessionId));
+  const handleSessionDeleted = (sessionId: string) => {
+    removeIdsFromBrowserStorage(sessionId); // refreshes list
   };
 
   // Single session view
@@ -167,7 +167,7 @@ export function DownloadPage() {
             sessions={sessions}
             title={t('downloadPage.sessionListTitle')}
             showFilters={sessions.length > 5}
-            onDeleteSessionClick={handleDeleteSession}
+            onSessionDeleted={handleSessionDeleted}
           />
         )}
       </div>
