@@ -1,14 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Download, Inbox, AlertCircle } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useBrowserStorage } from '@/hooks/useBrowserStorage';
-import { useApi } from '@/hooks/useApi';
-import { DownloadFileCard } from './DownloadFileCard';
-import { SessionList } from './SessionList';
-import type { SessionInfo } from '@/types/api';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Download, Inbox, AlertCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useBrowserStorage } from "@/hooks/useBrowserStorage";
+import { useApi } from "@/hooks/useApi";
+import { DownloadFileCard } from "./DownloadFileCard";
+import { SessionList } from "./SessionList";
+import type { SessionInfo } from "@/types/api";
+import { useTranslation } from "react-i18next";
 
 export function DownloadPage() {
   const { t } = useTranslation();
@@ -17,8 +17,11 @@ export function DownloadPage() {
   const [error, setError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [ignoreBrowserStorageUpdate, setIgnoreBrowserStorageUpdate] =
+    useState(false);
 
-  const { storedValues, removeValue: removeIdsFromBrowserStorage } = useBrowserStorage();
+  const { storedValues, removeValue: removeIdsFromBrowserStorage } =
+    useBrowserStorage();
   const { getSession } = useApi();
 
   // If sessionId in URL, show single download card
@@ -31,7 +34,9 @@ export function DownloadPage() {
 
   useEffect(() => {
     if (sessionIdParam) return; // Don't load list if showing single session
-
+    if (ignoreBrowserStorageUpdate) {
+      return setIgnoreBrowserStorageUpdate(false);
+    }
     const loadSessions = async () => {
       try {
         const sessionIds = Object.keys(storedValues);
@@ -43,43 +48,53 @@ export function DownloadPage() {
           return expiry > now;
         });
 
-        // Fetch session info for each
+        // Fetch session info for each session ID
         const invalidSessionIds: string[] = [];
-        const sessionPromises: Promise<SessionInfo | null>[] = validSessionIds.map(async (sessionId) => {
-          try {
-            const data = await getSession(sessionId);
-            return {
-              sessionId,
-              expiresAt: storedValues[sessionId].expiresAt,
-              status: data.status,
-              senderPublicKey: data.senderPublicKey,
-              mimeType: data.mimeType,
-              fileSize: data.fileSize,
-              fileName: data.fileName,
-            };
-          } catch (err) {
-            invalidSessionIds.push(sessionId);
-            console.error(`Failed to fetch session ${sessionId}:`, err);
-            return null;
-          }
-        });
+        const sessionPromises: Promise<SessionInfo | null>[] =
+          validSessionIds.map(async (sessionId) => {
+            try {
+              const data = await getSession(sessionId);
+              return {
+                sessionId,
+                expiresAt: storedValues[sessionId].expiresAt,
+                status: data.status,
+                senderPublicKey: data.senderPublicKey,
+                mimeType: data.mimeType,
+                fileSize: data.fileSize,
+                fileName: data.fileName,
+              };
+            } catch (err) {
+              invalidSessionIds.push(sessionId);
+              console.error(`Failed to fetch session ${sessionId}:`, err);
+              return null;
+            }
+          });
 
-        removeIdsFromBrowserStorage(...invalidSessionIds);
+        // Wait for server responses and update state
         const results = await Promise.all(sessionPromises);
-        const validSessions = results
-          .filter((s) => s !== null);
+        const validSessions = results.filter((s) => s !== null);
         setSessions(validSessions);
         setError(null);
+
+        // Remove invalid/expired sessions from storage
+        setIgnoreBrowserStorageUpdate(true); // Prevent immediate reload
+        removeIdsFromBrowserStorage(...invalidSessionIds);
       } catch (err) {
-        console.error('Error loading sessions:', err);
-        setError(t('downloadPage.errors.loadSessionsFailed'));
+        console.error("Error loading sessions:", err);
+        setError(t("downloadPage.errors.loadSessionsFailed"));
       } finally {
         setIsLoading(false);
       }
     };
 
     loadSessions();
-  }, [sessionIdParam, storedValues, getSession, removeIdsFromBrowserStorage, t]);
+  }, [
+    sessionIdParam,
+    storedValues,
+    getSession,
+    removeIdsFromBrowserStorage,
+    t,
+  ]);
 
   const handleSessionDeleted = (sessionId: string) => {
     removeIdsFromBrowserStorage(sessionId); // refreshes list
@@ -95,7 +110,7 @@ export function DownloadPage() {
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  {t('downloadPage.missingPrivateKeyDescription')}
+                  {t("downloadPage.missingPrivateKeyDescription")}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -112,16 +127,13 @@ export function DownloadPage() {
             privateKey={selectedSession.myPrivateKey}
             onComplete={() => {
               // Optionally navigate back to list after download
-              setTimeout(() => navigate('/download'), 2000);
+              setTimeout(() => navigate("/download"), 2000);
             }}
           />
         </div>
       </div>
     );
   }
-
-
-  
 
   // List view
   return (
@@ -130,9 +142,9 @@ export function DownloadPage() {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center justify-center gap-2">
             <Download className="w-8 h-8" />
-            {t('downloadPage.title')}
+            {t("downloadPage.title")}
           </h1>
-          <p className="text-slate-600">{t('downloadPage.description')}</p>
+          <p className="text-slate-600">{t("downloadPage.description")}</p>
         </div>
 
         {error && (
@@ -145,7 +157,9 @@ export function DownloadPage() {
         {isLoading ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">{t('downloadPage.loadingSessions')}</p>
+              <p className="text-muted-foreground">
+                {t("downloadPage.loadingSessions")}
+              </p>
             </CardContent>
           </Card>
         ) : sessions.length === 0 ? (
@@ -154,10 +168,10 @@ export function DownloadPage() {
               <Inbox className="w-12 h-12 mx-auto text-muted-foreground" />
               <div>
                 <p className="text-lg font-medium text-slate-700">
-                  {t('downloadPage.noSessionsTitle')}
+                  {t("downloadPage.noSessionsTitle")}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {t('downloadPage.noSessionsDescription')}
+                  {t("downloadPage.noSessionsDescription")}
                 </p>
               </div>
             </CardContent>
@@ -165,7 +179,7 @@ export function DownloadPage() {
         ) : (
           <SessionList
             sessions={sessions}
-            title={t('downloadPage.sessionListTitle')}
+            title={t("downloadPage.sessionListTitle")}
             showFilters={sessions.length > 5}
             onSessionDeleted={handleSessionDeleted}
           />
