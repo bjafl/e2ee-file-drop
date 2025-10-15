@@ -17,12 +17,14 @@ interface SessionListProps {
   sessions: Array<SessionInfo>;
   title?: string;
   showFilters?: boolean;
+  onDeleteSessionClick?: (sessionId: string) => void;
 }
 
 export const SessionList: FC<SessionListProps> = ({
   sessions,
   title = 'Sessions Overview',
   showFilters = true,
+  onDeleteSessionClick = () => {},
 }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -120,7 +122,7 @@ export const SessionList: FC<SessionListProps> = ({
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredSessions.map((session) => (
-            <SessionItem key={session.sessionId} {...session} />
+            <SessionItem key={session.sessionId} {...session} onDelete={() => onDeleteSessionClick(session.sessionId)} />
           ))}
         </div>
       )}

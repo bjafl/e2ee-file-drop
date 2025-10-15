@@ -57,5 +57,12 @@ export function useApi() {
     return file;
   }, [getDownloadUrl]);
 
-  return { getSession, getUploadUrl, getDownloadUrl, createSession, downloadSessionFile };
+  const deleteSession = useCallback(async (sessionId: string) => {
+    const response = await fetch(`/api/delete-session/${sessionId}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete session');
+  }, []);
+
+  return { getSession, getUploadUrl, getDownloadUrl, createSession, downloadSessionFile, deleteSession };
 }

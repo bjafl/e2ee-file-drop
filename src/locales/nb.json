@@ -16,7 +16,9 @@
     "mimeType": "MIME-type",
     "fileSize": "Filstørrelse",
     "senderPublicKey": "Offentlig nøkkel (avsender)",
-    "expiresAt": "Utløper"
+    "expiresAt": "Utløper",
+    "downloadPageBtn": "Til nedlastingsside",
+    "deleteBtn": "Slett økt"
   },
   "status": {
     "waiting": "Venter",

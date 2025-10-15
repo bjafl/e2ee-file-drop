@@ -3,6 +3,11 @@ import { deleteSessionBlobFromBucket } from "./lib/b2";
 import { deleteSession, getSession } from "./lib/netlifyBlob";
 
 export default async (request: Request, context: Context) => {
+  if (request.method !== "DELETE") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+    });
+  }
   const sessionId = context.params?.sessionId;
 
   if (!sessionId) {
@@ -31,6 +36,6 @@ export default async (request: Request, context: Context) => {
 };
 
 export const config: Config = {
-  path: "/api/get-download-url/:sessionId",
-  method: "GET",
+  path: "/api/delete-session/:sessionId",
+  method: "DELETE",
 };

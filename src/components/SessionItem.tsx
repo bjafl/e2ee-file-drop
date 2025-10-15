@@ -2,12 +2,14 @@ import { useMemo, type FC } from "react";
 import { Card, CardContent, CardHeader } from "./ui/card";
 import { format as formatDate } from "date-fns";
 import type { SessionInfo, SessionStatus } from "@/types/api";
-import { Hash, Key, Calendar, File, FileType, HardDrive } from "lucide-react";
+import { Hash, Key, Calendar, File, FileType, HardDrive, Trash2, Download } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { cn, formatFileSize } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { Button } from "./ui/button";
+import { useNavigate } from "react-router-dom";
 
-export const SessionItem: FC<SessionInfo> = ({
+export const SessionItem: FC<SessionInfo & { onDelete: () => void }> = ({
   sessionId,
   expiresAt,
   status,
@@ -15,8 +17,10 @@ export const SessionItem: FC<SessionInfo> = ({
   fileName,
   mimeType,
   fileSize,
+  onDelete,
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const formattedDate = useMemo(() => {
     try {
       return formatDate(new Date(expiresAt), "dd.MM.yyyy HH:mm:ss");
@@ -54,6 +58,11 @@ export const SessionItem: FC<SessionInfo> = ({
         return "text-gray-600";
     }
   };
+
+  const gotoDownloadPage = () => {
+    navigate(`/download/${sessionId}`);
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
@@ -125,6 +134,14 @@ export const SessionItem: FC<SessionInfo> = ({
             </p>
             <p className="text-sm">{formattedDate}</p>
           </div>
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="outline" onClick={gotoDownloadPage}>
+            <Download className="h-4 w-4" /> {t("download")}
+          </Button>
+          <Button variant="ghost" onClick={onDelete} className="text-red-600 hover:bg-red-50">
+            <Trash2 className="h-4 w-4" /> {t("delete")}
+          </Button>
         </div>
       </CardContent>
     </Card>

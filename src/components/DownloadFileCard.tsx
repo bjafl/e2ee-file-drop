@@ -81,7 +81,7 @@ export function DownloadFileCard({
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [sessionId, status, getSession]);
+  }, [sessionId, status, getSession, t]);
 
   const handleDownload = async () => {
     setStatus('downloading');
