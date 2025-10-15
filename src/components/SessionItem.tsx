@@ -116,7 +116,7 @@ export const SessionItem: FC<SessionInfo & { onDelete: () => void }> = ({
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-col h-full space-y-3">
         {fileName && (
           <div className="flex items-start gap-2">
             <File className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
@@ -172,7 +172,7 @@ export const SessionItem: FC<SessionInfo & { onDelete: () => void }> = ({
             <p className="text-sm">{formattedDate}</p>
           </div>
         </div>
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-2 mt-auto">
           <Button variant="outline" onClick={gotoDownloadPage}>
             <Download className="h-4 w-4" /> {t("download")}
           </Button>

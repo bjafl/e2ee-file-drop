@@ -60,6 +60,7 @@
   },
   "downloadPage": {
     "title": "Motta filer",
+    "description": "Se status på øktene knyttet til denne nettleseren.",
     "sessionListTitle": "Dine økter",
     "loadingSessions": "Laster økter...",
     "noSessionsTitle": "Ingen økter funnet.",

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Download, Inbox, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,7 +22,12 @@ export function DownloadPage() {
   const { getSession, deleteSession } = useApi();
 
   // If sessionId in URL, show single download card
-  const selectedSession = sessionIdParam ? storedValues[sessionIdParam] : null;
+  const selectedSession = useMemo(() => {
+    if (sessionIdParam && sessionIdParam in storedValues) {
+      return storedValues[sessionIdParam];
+    }
+    return null;
+  }, [sessionIdParam, storedValues]);
 
   useEffect(() => {
     if (sessionIdParam) return; // Don't load list if showing single session
@@ -77,8 +82,7 @@ export function DownloadPage() {
   }, [sessionIdParam, storedValues, getSession, removeIdsFromBrowserStorage, t]);
 
   const handleDeleteSession = (sessionId: string) => {
-    removeIdsFromBrowserStorage(sessionId);
-    deleteSession(sessionId);
+    deleteSession(sessionId).then(() => removeIdsFromBrowserStorage(sessionId));
   };
 
   // Single session view
@@ -126,9 +130,9 @@ export function DownloadPage() {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center justify-center gap-2">
             <Download className="w-8 h-8" />
-            Motta filer
+            {t('downloadPage.title')}
           </h1>
-          <p className="text-slate-600">Dine ventende nedlastinger</p>
+          <p className="text-slate-600">{t('downloadPage.description')}</p>
         </div>
 
         {error && (
@@ -141,7 +145,7 @@ export function DownloadPage() {
         {isLoading ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">Laster økter...</p>
+              <p className="text-muted-foreground">{t('downloadPage.loadingSessions')}</p>
             </CardContent>
           </Card>
         ) : sessions.length === 0 ? (
