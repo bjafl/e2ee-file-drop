@@ -132,7 +132,7 @@ console.log()
         body: encryptedBlob.encrypted,
         headers: {
           "content-type": "application/octet-stream",
-          "content-length": String(encryptedSize),
+          "Content-Length": String(encryptedSize),
           "content-md5": encryptedBlob.contentMD5,
           "x-amz-meta-filename": file.name,
           "x-amz-meta-nonce": encryptedBlob.nonce,
