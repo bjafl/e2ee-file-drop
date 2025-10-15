@@ -39,7 +39,8 @@ export async function getSignedUploadUrl(session: Session, expiresIn=600) {
       Key: session.s3Key!,
       // ContentType: "application/octet-stream",
       // ContentLength: session.fileSize,
-      ContentMD5: session.contentMD5,
+      // ContentMD5: session.contentMD5,
+      // ChecksumSHA256: session.contentMD5,
       Metadata: {
         filename: session.fileName || "",
         nonce: session.nonce || "",
