@@ -50,12 +50,15 @@ export function DownloadFileCard({
   const { decryptFile } = useFileEncryption({ privateKey });
 
   useEffect(() => {
+    if (status !== 'waiting' && status !== 'checking') return;
+    
     const checkStatus = async () => {
       setError(null);
       try {
         const data = await getSession(sessionId);
 
-        if (data.status === 'uploaded') {
+        if (data.status !== 'uploading' && data.status !== 'waiting') {
+          clearInterval(interval);
           setStatus('ready');
           setFileName(data.fileName);
           setFileSize(data.fileSize);
@@ -71,14 +74,14 @@ export function DownloadFileCard({
       }
     };
 
-    checkStatus();
-
+    
     // Poll every 2 seconds if waiting or checking
     const interval = setInterval(() => {
       if (status === 'waiting' || status === 'checking') {
         checkStatus();
       }
     }, 2000);
+    checkStatus();
 
     return () => clearInterval(interval);
   }, [sessionId, status, getSession, t]);
@@ -105,7 +108,7 @@ export function DownloadFileCard({
       setStatus('decrypting');
       const decryptedFile = await decryptFile(file);
 
-      setProgress(100);
+      setProgress(90);
       const url = URL.createObjectURL(decryptedFile);
       const a = document.createElement('a');
       a.href = url;
@@ -114,7 +117,7 @@ export function DownloadFileCard({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-
+      setProgress(100);
       setStatus('complete');
       onComplete?.();
     } catch (err) {

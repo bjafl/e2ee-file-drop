@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Download, Inbox, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -13,7 +13,6 @@ import { useTranslation } from "react-i18next";
 export function DownloadPage() {
   const { t } = useTranslation();
   const { sessionId: sessionIdParam } = useParams<{ sessionId: string }>();
-  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +26,11 @@ export function DownloadPage() {
   // If sessionId in URL, show single download card
   const selectedSession = useMemo(() => {
     if (sessionIdParam && sessionIdParam in storedValues) {
-      return storedValues[sessionIdParam];
+      const session = storedValues[sessionIdParam];
+      if (!session.myPrivateKey) {
+        return null;
+      }
+      return session;
     }
     return null;
   }, [sessionIdParam, storedValues]);
@@ -113,6 +116,8 @@ export function DownloadPage() {
       );
     }
 
+    //TODO: Failed fetch session from server
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 flex items-center justify-center">
         <div className="w-full max-w-2xl">
@@ -121,7 +126,7 @@ export function DownloadPage() {
             privateKey={selectedSession.myPrivateKey}
             onComplete={() => {
               // Optionally navigate back to list after download
-              setTimeout(() => navigate("/download"), 2000);
+              //setTimeout(() => navigate("/download"), 2000);
             }}
           />
         </div>

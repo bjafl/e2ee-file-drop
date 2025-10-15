@@ -48,3 +48,8 @@ export interface CreateSessionPayload {
 export interface ErrorResponse {
   error: string;
 }
+
+export interface DeleteSessionResponse {
+  b2Deleted: boolean;
+  sessionDeleted: boolean;
+}
