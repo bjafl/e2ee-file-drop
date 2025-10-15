@@ -40,7 +40,7 @@ export async function getSignedUploadUrl(session: Session, expiresIn=600) {
       // ContentType: "application/octet-stream",
       // ContentLength: session.fileSize,
       // ContentMD5: session.contentMD5,
-      // ChecksumSHA256: session.contentMD5,
+      ChecksumSHA256: session.contentMD5,
       // Metadata: {
       //   filename: session.fileName || "",
       //   nonce: session.nonce || "",
@@ -56,6 +56,8 @@ export async function getSignedUploadUrl(session: Session, expiresIn=600) {
       unhoistableHeaders: new Set([
         "content-type",
         "content-length",
+        'x-amz-sdk-checksum-algorithm', 
+        'x-amz-checksum-sha256'
       ]),
       hoistableHeaders: new Set([
         // "content-type",

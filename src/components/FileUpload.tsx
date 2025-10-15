@@ -112,7 +112,7 @@ console.log()
           fileSize: encryptedSize,
           nonce: encryptedBlob.nonce,
           mimeType: file.type,
-          contentMD5: encryptedBlob.contentMD5,
+          contentSHA256: encryptedBlob.contentSHA256,
         },
       });
       if (!uploadUrl) throw new Error("Failed to get upload URL");
@@ -138,6 +138,8 @@ console.log()
           // "x-amz-meta-nonce": encryptedBlob.nonce,
           // "x-amz-meta-publickey": publicKey,
           // "x-amz-meta-mimetype": file.type,
+          'x-amz-sdk-checksum-algorithm': 'sha256',
+          'x-amz-checksum-sha256': encryptedBlob.contentSHA256,
         },
       });
 

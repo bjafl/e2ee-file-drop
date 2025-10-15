@@ -78,19 +78,22 @@ export function useFileEncryption({
             setProgress(100);
             setIsProcessing(false);
             const encryptedArray = new Uint8Array(response.data.encrypted);
-            const md5Hash = nacl.hash(encryptedArray);
+
+            crypto.subtle.digest('SHA-256', encryptedArray).then((sha256) => {
             const encryptedBlob = new Blob(
               [encryptedArray],
               { type: 'application/octet-stream' }
             );
+            const sha256Array = new Uint8Array(sha256);
             resolve({
               encrypted: encryptedBlob,
               nonce: encodeBase64(response.data.nonce),
               fileName: file.name,
               mimeType: file.type,
               fileSize: response.data.originalSize,
-              contentMD5: encodeBase64(md5Hash),
+              contentSHA256: encodeBase64(sha256Array),
             });
+          });
           }
         };
 

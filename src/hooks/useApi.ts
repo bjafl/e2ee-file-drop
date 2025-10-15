@@ -47,7 +47,7 @@ export function useApi() {
       nonce: blobResponse.headers.get('x-amz-meta-nonce') || '',
       mimeType: blobResponse.headers.get('x-amz-meta-mimetype') || 'application/octet-stream',
       senderPublicKey: blobResponse.headers.get('x-amz-meta-publickey') || '',
-      contentMD5: blobResponse.headers.get('ContentMD5') || '',
+      contentSHA256: blobResponse.headers.get('ContentMD5') || '',
     };
 
     const blob = await blobResponse.blob();
