@@ -173,7 +173,7 @@ export function CreateSession() {
               <Alert>
                 <AlertDescription className="text-sm">
                   <Trans
-                    i18nKey="createSessionPage.linkNote"
+                    i18nKey="createSessionPage.receiveNote"
                     components={{ 1: <strong className="font-medium" /> }}
                   />
                 </AlertDescription>
