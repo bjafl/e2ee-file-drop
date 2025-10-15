@@ -1,8 +1,6 @@
 import { Config, Context } from "@netlify/edge-functions";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { getBucketClient } from "./lib/b2";
 import { getSession, saveSession } from "./lib/netlifyBlob";
+import { getSignedDownloadUrl } from "./lib/b2";
 
 export default async (request: Request, context: Context) => {
   const sessionId = context.params?.sessionId;
@@ -19,26 +17,43 @@ export default async (request: Request, context: Context) => {
       status: 404,
     });
   }
-  if (session.status == "waiting" || session.status == "uploading") {
-    return new Response(JSON.stringify({ error: "File not ready for download" }), {
-      status: 403,
+  const { s3Key, status } = session;
+  if (!s3Key) {
+    return new Response(JSON.stringify({ error: "No uploaded file found for this session" }), {
+      status: 404,
     });
+  }
+  if (status == "waiting" || status == "uploading") {
+    return new Response(
+      JSON.stringify({ error: "File not ready for download" }),
+      {
+        status: 403,
+      }
+    );
   }
 
   // Generate presigned GET URL (10 min expiry)
-  const b2 = getBucketClient();
-  const downloadUrl = await getSignedUrl(
-    b2,
-    new GetObjectCommand({
-      Bucket: process.env.B2_BUCKET!,
-      Key: session.s3Key!,
-    }),
-    { expiresIn: 600 }
-  );
+  let downloadUrl: string;
+  try {
+    downloadUrl = await getSignedDownloadUrl(s3Key);
+  } catch (error) {
+    console.error("Error generating download URL:", error);
+    return new Response(
+      JSON.stringify({ error: "Error generating download URL" }),
+      {
+        status: 500,
+      }
+    );
+  }
 
-  // Mark as downloaded
-  session.status = "downloaded";
-  await saveSession(sessionId, session); //TODO: add downloading state?
+  // Mark as downloading
+  session.status = "downloading";
+  const result = await saveSession(sessionId, session);
+  if (result === null) {
+    return new Response(JSON.stringify({ error: "Could not mark session as downloading" }), {
+      status: 500,
+    });
+  }
 
   return new Response(
     JSON.stringify({

@@ -5,10 +5,6 @@ import { deleteExpiredSessions } from "./lib/netlifyBlob";
 export default async () => {
   const deletedCount = await deleteExpiredSessions();
   console.log(`Deleted ${deletedCount} expired sessions.`);
-  return new Response(JSON.stringify({ deleted: deletedCount }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" }
-  });
 };
 
 export const config: Config = {

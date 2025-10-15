@@ -1,5 +1,5 @@
-import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSession } from "./netlifyBlob";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 let b2: S3Client | null = null;
 
@@ -31,13 +31,38 @@ export async function deleteFromBucket(s3Key: string) {
   }
 }
 
-export async function deleteSessionBlobFromBucket(sessionId: string) {
-  const session = await getSession(sessionId);
-  if (!session) {
-    throw new Error("Session not found");
-  }
-  if (!session.s3Key) {
-    throw new Error("No s3Key found in session");
-  }
-  await deleteFromBucket(session.s3Key);
+export async function getSignedUploadUrl(s3Key: string) {
+  const b2 = getBucketClient();
+  const command = new PutObjectCommand({
+      Bucket: process.env.B2_BUCKET!,
+      Key: s3Key,
+      ContentType: "application/octet-stream"
+  });
+  const url = await getSignedUrl(
+    b2,
+    command,
+    {
+      expiresIn: 600,
+      unhoistableHeaders: new Set(["content-length"]), // TODO: also sign content-length to enforce size limit
+      signableHeaders: new Set(["content-type"]), // Include content-type in signature
+    }
+  );
+  return url;
+}
+export async function getSignedDownloadUrl(s3Key: string, expiresIn=600) {
+  const b2 = getBucketClient();
+  const command = new GetObjectCommand({
+      Bucket: process.env.B2_BUCKET!,
+      Key: s3Key
+  });
+  const url = await getSignedUrl(
+    b2,
+    command,
+    {
+      expiresIn,
+      unhoistableHeaders: new Set(["content-length"]), // TODO: also sign content-length to enforce size limit
+      signableHeaders: new Set(["content-type"]), // Include content-type in signature
+    }
+  );
+  return url;
 }

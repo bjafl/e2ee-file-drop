@@ -2,7 +2,7 @@ export interface Session {
   senderPublicKey?: string;
   recipientPublicKey: string;
   expiresAt: number;
-  status: 'waiting' | 'uploading' | 'uploaded' | 'downloaded';
+  status: "waiting" | "uploading" | "uploaded" | "downloading" | "downloaded";
   nonce?: string;
   mimeType?: string;
   s3Key?: string;

@@ -1,5 +1,4 @@
 import { Config, Context } from "@netlify/edge-functions";
-import { deleteSessionBlobFromBucket } from "./lib/b2";
 import { deleteSession, getSession } from "./lib/netlifyBlob";
 
 export default async (request: Request, context: Context) => {
@@ -23,16 +22,14 @@ export default async (request: Request, context: Context) => {
     });
   }
 
-  deleteSession(sessionId);
+  const { b2Deleted, sessionDeleted } = await deleteSession(sessionId, true, session.s3Key);
  
-  try {
-    await deleteSessionBlobFromBucket(sessionId);
-    console.log(`Successfully deleted ${session.s3Key!}`);
-    return new Response(JSON.stringify({ message: "File deleted from server" }), { status: 200 });
-  } catch (error) {
-    console.error(`Error deleting ${session.s3Key!}:`, error);
-    return new Response(JSON.stringify({ error: "Error deleting file from server" }), { status: 500 });
-  }
+  return new Response(
+    JSON.stringify({
+      b2Deleted,
+      sessionDeleted,
+    })
+  );
 };
 
 export const config: Config = {
