@@ -1,271 +1,167 @@
-// components/DownloadPage.tsx
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Download, FileCheck, Loader2, AlertCircle, Lock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Download, Inbox, AlertCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { useApi } from '@/hooks/useApi';
 import { useBrowserStorage } from '@/hooks/useBrowserStorage';
-import { useFileEncryption } from '@/hooks/useFileEncryption';
-
-type Status = 'checking' | 'waiting' | 'ready' | 'downloading' | 'decrypting' | 'complete' | 'error';
+import { useApi } from '@/hooks/useApi';
+import { DownloadFileCard } from './DownloadFileCard';
+import { SessionList } from './SessionList';
+import type { SessionInfo } from '@/types/api';
 
 export function DownloadPage() {
   const { sessionId: sessionIdParam } = useParams<{ sessionId: string }>();
-  const [sessionId, setSessionId] = useState<string | null>(sessionIdParam || null);
-  
-  const [status, setStatus] = useState<Status>('checking');
-  const [progress, setProgress] = useState(0);
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | undefined>(undefined);
-  const [fileSize, setFileSize] = useState<number | undefined>(undefined);
-  const [privateKey, setPrivateKey] = useState<string | undefined>(undefined);
-  const [senderPublicKey, setSenderPublicKey] = useState<string | undefined>(undefined);
-  const { getSession, downloadSessionFile } = useApi();
-  const { storedValues: storedKeys } = useBrowserStorage();
-  const { decryptFile } = useFileEncryption({ privateKey });
-  const [nonce, setNonce] = useState<string | undefined>(undefined);
+  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const { storedValues } = useBrowserStorage();
+  const { getSession } = useApi();
+
+  // If sessionId in URL, show single download card
+  const selectedSession = sessionIdParam ? storedValues[sessionIdParam] : null;
 
   useEffect(() => {
-    if (sessionIdParam) {
-      setSessionId(sessionIdParam);
-    }
-  }, [sessionIdParam]);
+    if (sessionIdParam) return; // Don't load list if showing single session
 
-  useEffect(() => {
-    if (status !== 'checking' && status !== 'waiting') return;
-    if (!sessionId) {
-      //TODO! find from storage
-      setError('Ingen session ID i URL');
-      setStatus('error');
-      return;
-    }
-    const privateKey = storedKeys[sessionId]?.myPrivateKey;
-    if (!privateKey) {
-      setError('Privat nøkkel ikke funnet i nettleseren din. Kan ikke dekryptere filen.');
-      setStatus('error');
-      return;
-    }
-    setPrivateKey(privateKey);
-
-    const checkStatus = async () => {
-
-
-      // setStatus('checking');
+    const loadSessions = async () => {
+      setIsLoading(true);
       setError(null);
+
       try {
-        const data = await getSession(sessionId);
-        
-        if (data.status === 'uploaded') {
-          setStatus('ready');
-          setFileName(data.fileName);
-          setFileSize(data.fileSize);
-          setSenderPublicKey(data.senderPublicKey);
-          setNonce(data.nonce);
-        } else {
-          setStatus('waiting');
-        }
+        const sessionIds = Object.keys(storedValues);
+
+        // Filter out expired sessions
+        const now = Date.now();
+        const validSessionIds = sessionIds.filter((id) => {
+          const expiry = storedValues[id].expiresAt;
+          return expiry > now;
+        });
+
+        // Fetch session info for each
+        const sessionPromises = validSessionIds.map(async (sessionId) => {
+          try {
+            const data = await getSession(sessionId);
+            return {
+              sessionId,
+              expiresAt: new Date(
+                storedValues[sessionId].expiresAt
+              ).toISOString(),
+              status: data.status,
+              senderPublicKey: data.senderPublicKey,
+              mimeType: data.mimeType,
+              fileSize: data.fileSize,
+              fileName: data.fileName,
+            };
+          } catch (err) {
+            console.error(`Failed to fetch session ${sessionId}:`, err);
+            return null;
+          }
+        });
+
+        const results = await Promise.all(sessionPromises);
+        const validSessions = results
+          .filter((s) => s !== null)
+          .map((s) => {
+            return { ...s, expiresAt: Number(s.expiresAt) } as SessionInfo;
+          });
+
+        setSessions(validSessions);
       } catch (err) {
-        console.error(err);
-        setError('Fant ikke status for økt med ID: ' + sessionId);
-        setStatus('error');
+        console.error('Error loading sessions:', err);
+        setError('Kunne ikke laste økter');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    checkStatus();
+    loadSessions();
+  }, [sessionIdParam, storedValues, getSession]);
 
-    // Poll every 2 seconds if waiting
-    const interval = setInterval(() => {
-      if (status === 'waiting' || status === 'checking') {
-        checkStatus();
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [sessionId, status, getSession, storedKeys]);
-
-  const handleDownload = async () => {
-    if (!sessionId) return;
-
-    setStatus('downloading');
-    setProgress(0);
-    setError(null);
-
-    try {
-      const file = await downloadSessionFile(sessionId);
-
-
-      //TODO
-      file.fileName = fileName || file.fileName;
-      file.fileSize = fileSize || file.fileSize;
-      file.nonce = nonce || file.nonce;
-      file.senderPublicKey = senderPublicKey || file.senderPublicKey;
-
-      if (file.senderPublicKey != senderPublicKey) {
-        console.warn("Sender public key mismatch!"); // TODO: handle this properly
-        if (!file.senderPublicKey) file.senderPublicKey = senderPublicKey; // TODO handle missing pub key
-      }
-
-      // Decrypt
-      setProgress(60);
-      setStatus('decrypting');
-      const decryptedFile = await decryptFile(file); //TODO: handle missing pub key
-
-      // Download
-      setProgress(100);
-      const url = URL.createObjectURL(decryptedFile);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = decryptedFile.name || 'decrypted-file';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      setStatus('complete');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Noe gikk galt');
-      setStatus('error');
-      setProgress(0);
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 flex items-center justify-center">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <Lock className="w-6 h-6" />
-            Motta kryptert fil
-          </CardTitle>
-          <CardDescription>
-            Filen dekrypteres i nettleseren din
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Checking status */}
-          {status === 'checking' && (
-            <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <Loader2 className="w-8 h-8 animate-spin text-slate-600" />
-              <p className="text-slate-600">Sjekker status...</p>
-            </div>
-          )}
-
-          {/* Waiting for file */}
-          {status === 'waiting' && (
-            <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <div className="relative">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-medium text-slate-700">
-                  Venter på fil...
-                </p>
-                <p className="text-sm text-slate-500 mt-1">
-                  Siden oppdateres automatisk når filen er klar
-                </p>
-              </div>
-              <Badge variant="outline" className="mt-2">
-                Session ID: {sessionId?.slice(0, 8)}...
-              </Badge>
-            </div>
-          )}
-
-          {/* Ready to download */}
-          {status === 'ready' && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4 p-6 bg-green-50 rounded-lg border border-green-200">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <FileCheck className="w-8 h-8 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-green-900">Fil klar til nedlasting</p>
-                  {fileName && (
-                    <p className="text-sm text-green-700 mt-1 font-mono">
-                      {fileName}
-                    </p>
-                  )}
-                  {fileSize && (
-                    <p className="text-sm text-green-600 mt-1">
-                      {formatFileSize(fileSize)}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <Button 
-                onClick={handleDownload} 
-                className="w-full"
-                size="lg"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Last ned og dekrypter
-              </Button>
-
-              <Alert>
-                <Lock className="h-4 w-4" />
+  // Single session view
+  if (sessionIdParam) {
+    if (!selectedSession) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 flex items-center justify-center">
+          <Card className="w-full max-w-2xl">
+            <CardContent className="py-12">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Filen dekrypteres lokalt i nettleseren din. Ingen kan lese innholdet under overføringen.
+                  Privat nøkkel ikke funnet for denne økten. Kan ikke dekryptere
+                  filen.
                 </AlertDescription>
               </Alert>
-            </div>
-          )}
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
 
-          {/* Downloading/Decrypting */}
-          {(status === 'downloading' || status === 'decrypting') && (
-            <div className="space-y-4">
-              <div className="flex flex-col items-center gap-4 py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                <div className="text-center">
-                  <p className="font-medium text-slate-700">
-                    {status === 'downloading' ? 'Laster ned...' : 'Dekrypterer...'}
-                  </p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    Vennligst vent
-                  </p>
-                </div>
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 flex items-center justify-center">
+        <div className="w-full max-w-2xl">
+          <DownloadFileCard
+            sessionId={sessionIdParam}
+            privateKey={selectedSession.myPrivateKey}
+            onComplete={() => {
+              // Optionally navigate back to list after download
+              setTimeout(() => navigate('/download'), 2000);
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // List view
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center justify-center gap-2">
+            <Download className="w-8 h-8" />
+            Motta filer
+          </h1>
+          <p className="text-slate-600">Dine ventende nedlastinger</p>
+        </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {isLoading ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">Laster økter...</p>
+            </CardContent>
+          </Card>
+        ) : sessions.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center space-y-4">
+              <Inbox className="w-12 h-12 mx-auto text-muted-foreground" />
+              <div>
+                <p className="text-lg font-medium text-slate-700">
+                  Ingen ventende nedlastinger
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Når noen sender deg en fil vil den dukke opp her
+                </p>
               </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-slate-600">
-                  <span>Fremdrift</span>
-                  <span>{progress}%</span>
-                </div>
-                <Progress value={progress} className="h-2" />
-              </div>
-            </div>
-          )}
-
-          {/* Complete */}
-          {status === 'complete' && (
-            <Alert className="border-green-200 bg-green-50">
-              <FileCheck className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">
-                Fil lastet ned og dekryptert! Sjekk nedlastingsmappen din.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Error */}
-          {error && status === 'error' && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <SessionList
+            sessions={sessions}
+            title="Dine økter"
+            showFilters={sessions.length > 5}
+          />
+        )}
+      </div>
     </div>
   );
 }

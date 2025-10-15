@@ -1,5 +1,4 @@
-
-type SessionStatus = 'waiting' | 'uploading' | 'uploaded' | 'downloaded';
+export type SessionStatus = 'waiting' | 'uploading' | 'uploaded' | 'downloaded';
 export interface UploadUrlResponse {
   uploadUrl?: string;
   status?: SessionStatus;
@@ -26,6 +25,12 @@ export interface SessionResponse {
   fileName?: string;
 }
 
+export interface SessionInfo
+  extends Omit<SessionResponse, 'recipientPublicKey' | 'nonce'> {
+  sessionId: string;
+  expiresAt: number; // timestamp
+}
+
 export interface DownloadUrlResponse {
   downloadUrl: string;
   fileName: string;
@@ -38,7 +43,6 @@ export interface CreateSessionResponse {
 
 export interface CreateSessionPayload {
   publicKey: string; // base64
-
 }
 
 export interface ErrorResponse {
