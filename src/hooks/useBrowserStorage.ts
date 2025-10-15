@@ -35,11 +35,11 @@ export function useBrowserStorage(
   }, [storedValues]);
 
   // Save to localStorage with expiration
-  const setValue = useCallback((value: CryptoKeyMap) => {
+  const setValue = useCallback((sessionId: string, value: CryptoKeyMap) => {
       const expiry = expiryMs
         ? Date.now() + expiryMs
         : Date.now() + 24 * 60 * 60 * 1000; // Default 24h
-      setStoredValues(prev => ({ ...prev, [STORAGE_KEY]: { ...value, expiresAt: expiry } }));
+      setStoredValues(prev => ({ ...prev, [sessionId]: { ...value, expiresAt: expiry } }));
   }, [expiryMs]);
 
   // Remove from storage
