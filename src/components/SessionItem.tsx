@@ -184,7 +184,6 @@ export const SessionItem: FC<SessionInfo & { onDeleted: () => void }> = ({
               <AlertDialogTrigger>
                 <Button
                   variant="ghost"
-                  onClick={handleDelete}
                   className="text-red-600 hover:bg-red-50"
                 >
                   <Trash2 className="h-4 w-4" /> {t("delete")}
@@ -192,17 +191,17 @@ export const SessionItem: FC<SessionInfo & { onDeleted: () => void }> = ({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>{t("deleteAlert.title")}</AlertDialogTitle>
+                  <AlertDialogTitle>{t("sessionItem.deleteAlert.title")}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    {t("deleteAlert.description")}
+                    {t("sessionItem.deleteAlert.description")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>
-                    {t("deleteAlert.cancelBtn")}
+                    {t("sessionItem.deleteAlert.cancelBtn")}
                   </AlertDialogCancel>
                   <AlertDialogAction onClick={handleDelete}>
-                    {t("deleteAlert.confirmBtn")}
+                    {t("sessionItem.deleteAlert.confirmBtn")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
