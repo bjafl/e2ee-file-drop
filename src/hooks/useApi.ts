@@ -45,8 +45,9 @@ export function useApi() {
       fileName: blobResponse.headers.get('x-amz-meta-filename') || '',
       fileSize: parseInt(blobResponse.headers.get('content-length') || '0', 10),
       nonce: blobResponse.headers.get('x-amz-meta-nonce') || '',
-      mimeType: blobResponse.headers.get('content-type') || 'application/octet-stream',
+      mimeType: blobResponse.headers.get('x-amz-meta-mimetype') || 'application/octet-stream',
       senderPublicKey: blobResponse.headers.get('x-amz-meta-publickey') || '',
+      contentMD5: blobResponse.headers.get('x-amz-meta-contentmd5') || '',
     };
 
     const blob = await blobResponse.blob();

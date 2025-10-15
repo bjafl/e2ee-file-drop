@@ -112,6 +112,7 @@ export function FileUpload() {
           fileSize: encryptedSize,
           nonce: encryptedBlob.nonce,
           mimeType: file.type,
+          contentMD5: encryptedBlob.contentMD5,
         },
       });
       if (!uploadUrl) throw new Error("Failed to get upload URL");

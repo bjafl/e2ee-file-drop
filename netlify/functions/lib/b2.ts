@@ -1,5 +1,6 @@
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Session } from "./types";
 
 let b2: S3Client | null = null;
 
@@ -31,24 +32,32 @@ export async function deleteFromBucket(s3Key: string) {
   }
 }
 
-export async function getSignedUploadUrl(s3Key: string) {
+export async function getSignedUploadUrl(session: Session, expiresIn=600) {
   const b2 = getBucketClient();
   const command = new PutObjectCommand({
       Bucket: process.env.B2_BUCKET!,
-      Key: s3Key,
-      ContentType: "application/octet-stream"
+      Key: session.s3Key!,
+      ContentType: "application/octet-stream",
+      ContentLength: session.fileSize,
+      Metadata: {
+        fileName: session.fileName || "",
+        nonce: session.nonce || "",
+        publicKey: session.senderPublicKey || "",
+        mimeType: session.mimeType || "",
+      },
   });
   const url = await getSignedUrl(
     b2,
     command,
     {
-      expiresIn: 600,
-      unhoistableHeaders: new Set(["content-length"]), // TODO: also sign content-length to enforce size limit
-      signableHeaders: new Set(["content-type"]), // Include content-type in signature
+      expiresIn,
+      // unhoistableHeaders: new Set(["content-length"]), // TODO: also sign content-length to enforce size limit
+      // signableHeaders: new Set(["content-type"]), // Include content-type in signature
     }
   );
   return url;
 }
+
 export async function getSignedDownloadUrl(s3Key: string, expiresIn=600) {
   const b2 = getBucketClient();
   const command = new GetObjectCommand({
@@ -60,8 +69,6 @@ export async function getSignedDownloadUrl(s3Key: string, expiresIn=600) {
     command,
     {
       expiresIn,
-      unhoistableHeaders: new Set(["content-length"]), // TODO: also sign content-length to enforce size limit
-      signableHeaders: new Set(["content-type"]), // Include content-type in signature
     }
   );
   return url;

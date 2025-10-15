@@ -8,6 +8,7 @@ export interface Session {
   s3Key?: string;
   fileSize?: number;
   fileName?: string;
+  contentMD5?: string;
 }
 
 export interface UploadUrlPayload {

@@ -77,8 +77,10 @@ export function useFileEncryption({
             clearTimeout(timeout);
             setProgress(100);
             setIsProcessing(false);
+            const encryptedArray = new Uint8Array(response.data.encrypted);
+            const md5Hash = nacl.hash(encryptedArray);
             const encryptedBlob = new Blob(
-              [new Uint8Array(response.data.encrypted)],
+              [encryptedArray],
               { type: 'application/octet-stream' }
             );
             resolve({
@@ -87,6 +89,7 @@ export function useFileEncryption({
               fileName: file.name,
               mimeType: file.type,
               fileSize: response.data.originalSize,
+              contentMD5: encodeBase64(md5Hash),
             });
           }
         };
