@@ -8,7 +8,7 @@ export interface Session {
   s3Key?: string;
   fileSize?: number;
   fileName?: string;
-  contentSHA256?: string;
+  contentMD5?: string;
 }
 
 export interface UploadUrlPayload {
@@ -19,6 +19,6 @@ export interface UploadUrlPayload {
     fileSize: number;
     nonce: string;
     mimeType: string;
-    contentSHA256: string; // base64
+    contentMD5: string; // base64
   };
 }
