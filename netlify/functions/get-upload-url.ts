@@ -1,7 +1,7 @@
 import { Config, Context } from "@netlify/edge-functions";
 import { nanoid } from "nanoid";
 import type { UploadUrlPayload } from "./lib/types";
-import {  getSignedDownloadUrl } from "./lib/b2";
+import {  getSignedUploadUrl } from "./lib/b2";
 import { getSession, saveSession } from "./lib/netlifyBlob";
 import { MAX_FILE_SIZE } from "./lib/const";
 
@@ -59,14 +59,16 @@ export default async (request: Request, context: Context) => {
     !metadata.fileName ||
     !metadata.fileSize ||
     !metadata.nonce ||
-    !metadata.mimeType
+    !metadata.mimeType ||
+    !metadata.contentMD5
   ) {
     return new Response(JSON.stringify({ error: "Missing metadata" }), {
       status: 400,
     });
   }
 
-  const { fileName, fileSize, nonce, mimeType } = metadata;
+  const { fileName, fileSize, nonce, mimeType, contentMD5 } = metadata;
+ 
 
   // Size limit
   if (fileSize > MAX_FILE_SIZE) {
@@ -76,14 +78,30 @@ export default async (request: Request, context: Context) => {
       }),
       { status: 413 }
     );
-  } //TODO: restrict upload size on b2
+  } 
 
-  const fileId = nanoid(16);
+ const fileId = nanoid(16);
   const s3Key = `${sessionId}/${fileId}`;
+
+  session.s3Key = s3Key;
+  session.status = "uploading";
+  session.senderPublicKey = senderPublicKey;
+  session.fileName = fileName;
+  session.fileSize = fileSize;
+  session.nonce = nonce;
+  session.mimeType = mimeType;
+  session.contentMD5 = contentMD5;
+
+  const result = await saveSession(sessionId, session);
+  if (result === null) {
+    return new Response(JSON.stringify({ error: "Could not update session" }), {
+      status: 500,
+    });
+  }
 
   let uploadUrl: string;
   try {
-    uploadUrl = await getSignedDownloadUrl(s3Key);
+    uploadUrl = await getSignedUploadUrl(session);
   } catch (error) {
     console.error("Error generating upload URL:", error);
     return new Response(
@@ -101,13 +119,6 @@ export default async (request: Request, context: Context) => {
   session.senderPublicKey = senderPublicKey;
   session.nonce = nonce;
   session.mimeType = mimeType;
-
-  const result = await saveSession(sessionId, session);
-  if (result === null) {
-    return new Response(JSON.stringify({ error: "Could not update session" }), {
-      status: 500,
-    });
-  }
 
   return new Response(JSON.stringify({ uploadUrl, status: session.status }), {
     headers: {

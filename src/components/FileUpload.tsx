@@ -132,11 +132,11 @@ export function FileUpload() {
         body: encryptedBlob.encrypted,
         headers: {
           "Content-Type": "application/octet-stream",
+          "Content-MD5": encryptedBlob.contentMD5,
           // 'Content-Length': String(encryptedSize),
           "x-amz-meta-filename": file.name,
           "x-amz-meta-nonce": encryptedBlob.nonce,
           "x-amz-meta-mimetype": file.type,
-          "x-amz-meta-contentmd5": encryptedBlob.contentMD5,
         },
       });
 

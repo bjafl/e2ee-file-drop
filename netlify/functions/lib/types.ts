@@ -19,5 +19,6 @@ export interface UploadUrlPayload {
     fileSize: number;
     nonce: string;
     mimeType: string;
+    contentMD5: string; // base64
   };
 }
