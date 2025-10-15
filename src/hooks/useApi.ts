@@ -42,12 +42,12 @@ export function useApi() {
     // const sessionId = blobResponse.headers.get('x-amz-meta-sessionid');
     // const encrypted = blobResponse.headers.get('x-amz-meta-encrypted');
     const metadata: EncryptedFileMetadata = {
-      fileName: blobResponse.headers.get('x-amz-meta-filename') || '',
-      fileSize: parseInt(blobResponse.headers.get('content-length') || '0', 10),
-      nonce: blobResponse.headers.get('x-amz-meta-nonce') || '',
-      mimeType: blobResponse.headers.get('x-amz-meta-mimetype') || 'application/octet-stream',
-      senderPublicKey: blobResponse.headers.get('x-amz-meta-publickey') || '',
-      contentMD5: blobResponse.headers.get('x-amz-meta-contentmd5') || '',
+      fileName: blobResponse.headers.get('X-Amz-Meta-FileName') || '',
+      fileSize: parseInt(blobResponse.headers.get('Content-Length') || '0', 10),
+      nonce: blobResponse.headers.get('X-Amz-Meta-Nonce') || '',
+      mimeType: blobResponse.headers.get('X-Amz-Meta-MimeType') || 'application/octet-stream',
+      senderPublicKey: blobResponse.headers.get('X-Amz-Meta-PublicKey') || '',
+      contentMD5: blobResponse.headers.get('ContentMD5') || '',
     };
 
     const blob = await blobResponse.blob();

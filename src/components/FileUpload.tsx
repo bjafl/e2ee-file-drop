@@ -103,7 +103,7 @@ export function FileUpload() {
       const encryptedSize = encryptedBlob.encrypted.size;
 
       setProgress(50);
-
+console.log()
       // Get upload URL
       const { uploadUrl } = await getUploadUrl(sessionId, {
         senderPublicKey: publicKey,
@@ -132,11 +132,12 @@ export function FileUpload() {
         body: encryptedBlob.encrypted,
         headers: {
           "Content-Type": "application/octet-stream",
-          "Content-MD5": encryptedBlob.contentMD5,
           // 'Content-Length': String(encryptedSize),
-          "x-amz-meta-filename": file.name,
-          "x-amz-meta-nonce": encryptedBlob.nonce,
-          "x-amz-meta-mimetype": file.type,
+          "Content-MD5": encryptedBlob.contentMD5,
+          "X-Amz-Meta-FileName": file.name,
+          "X-Amz-Meta-Nonce": encryptedBlob.nonce,
+          "X-Amz-Meta-PublicKey": publicKey,
+          "X-Amz-Meta-MimeType": file.type,
         },
       });
 
