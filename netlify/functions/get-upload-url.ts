@@ -23,13 +23,36 @@ export default async (request: Request, context: Context) => {
     uploadComplete = false,
     metadata,
   } = (await request.json()) as UploadUrlPayload;
+  
+  if (
+    !senderPublicKey ||
+    !metadata ||
+    !metadata.fileName ||
+    !metadata.fileSize ||
+    !metadata.nonce ||
+    !metadata.mimeType ||
+    !metadata.contentMD5
+  ) {
+    return new Response(JSON.stringify({ error: "Missing metadata" }), {
+      status: 400,
+    });
+  }
 
+  
   const session = await getSession(sessionId);
   if (!session) {
     return new Response(JSON.stringify({ error: "Session not found" }), {
       status: 404,
     });
   }
+  
+  const { fileName, fileSize, nonce, mimeType, contentMD5 } = metadata;
+  session.senderPublicKey = senderPublicKey;
+  session.fileName = fileName;
+  session.fileSize = fileSize;
+  session.nonce = nonce;
+  session.mimeType = mimeType;
+  session.contentMD5 = contentMD5;
 
   // Handle upload complete update
   if (uploadComplete) {
@@ -54,21 +77,6 @@ export default async (request: Request, context: Context) => {
 
   // Process upload url request
 
-  if (
-    !senderPublicKey ||
-    !metadata ||
-    !metadata.fileName ||
-    !metadata.fileSize ||
-    !metadata.nonce ||
-    !metadata.mimeType ||
-    !metadata.contentMD5
-  ) {
-    return new Response(JSON.stringify({ error: "Missing metadata" }), {
-      status: 400,
-    });
-  }
-
-  const { fileName, fileSize, nonce, mimeType, contentMD5 } = metadata;
  
 
   // Size limit
@@ -86,12 +94,6 @@ export default async (request: Request, context: Context) => {
 
   session.s3Key = s3Key;
   session.status = "uploading";
-  session.senderPublicKey = senderPublicKey;
-  session.fileName = fileName;
-  session.fileSize = fileSize;
-  session.nonce = nonce;
-  session.mimeType = mimeType;
-  session.contentMD5 = contentMD5;
 
   const result = await saveSession(sessionId, session);
   if (result === null) {
