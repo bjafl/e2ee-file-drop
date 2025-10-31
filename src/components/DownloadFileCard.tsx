@@ -56,7 +56,8 @@ export function DownloadFileCard({
       setError(null);
       try {
         const data = await getSession(sessionId);
-
+        console.log('Session data:', { ...data });
+        
         if (data.status !== 'uploading' && data.status !== 'waiting') {
           clearInterval(interval);
           setStatus('ready');
@@ -94,14 +95,28 @@ export function DownloadFileCard({
     try {
       const file = await downloadSessionFile(sessionId);
 
+      console.log('Downloaded file metadata:', {
+        fileName: file.fileName,
+        fileSize: file.fileSize,
+        nonce: file.nonce,
+        senderPublicKey: file.senderPublicKey,
+      });
       file.fileName = fileName || file.fileName;
       file.fileSize = fileSize || file.fileSize;
       file.nonce = nonce || file.nonce;
       file.senderPublicKey = senderPublicKey || file.senderPublicKey;
 
+      console.log('Downloaded file metadata, patched from session data:', {
+        fileName: file.fileName,
+        fileSize: file.fileSize,
+        nonce: file.nonce,
+        senderPublicKey: file.senderPublicKey,
+      });
+
       if (file.senderPublicKey !== senderPublicKey) {
         console.warn('Sender public key mismatch!');
-        if (!file.senderPublicKey) file.senderPublicKey = senderPublicKey;
+        //TODO
+        // if (!file.senderPublicKey) file.senderPublicKey = senderPublicKey;
       }
 
       setProgress(60);

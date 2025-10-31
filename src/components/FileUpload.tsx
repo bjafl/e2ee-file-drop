@@ -103,7 +103,6 @@ export function FileUpload() {
       const encryptedSize = encryptedBlob.encrypted.size;
 
       setProgress(50);
-console.log()
       // Get upload URL
       const { uploadUrl } = await getUploadUrl(sessionId, {
         senderPublicKey: publicKey,

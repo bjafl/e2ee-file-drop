@@ -17,7 +17,7 @@ export interface EncryptedFileMetadata {
   nonce: string;
   mimeType: string;
   contentMD5: string; // base64
-  senderPublicKey?: string; // base64
+  senderPublicKey: string; // base64
 }
 
 export type ContentFormat = Blob | string | Uint8Array;

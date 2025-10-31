@@ -5,6 +5,7 @@ import type {
   ContentFormat,
   DecryptFileWorkerPayload,
   EncryptedFile,
+  EncryptedFileMetadata,
   EncryptFileWorkerPayload,
   EncryptFileWorkerResponse,
   FileDecryptedMessage,
@@ -97,6 +98,7 @@ export function useFileEncryption({
               fileName: file.name,
               mimeType: file.type,
               fileSize: response.data.originalSize,
+              senderPublicKey: encodeBase64(keyPair.publicKey),
               contentMD5: encodeBase64(md5Hash),
             });
           }
@@ -123,7 +125,7 @@ export function useFileEncryption({
       file: File,
       fileBytes: Uint8Array,
       recipientPublicKey: string
-    ) => {
+    ): EncryptedFile<Blob> => {
       try {
         const { encrypted, nonce, originalSize } = encryptFileFunc({
           unencrypted: fileBytes,
@@ -143,6 +145,7 @@ export function useFileEncryption({
           fileName: file.name,
           mimeType: file.type,
           fileSize: originalSize,
+          senderPublicKey: encodeBase64(keyPair.publicKey),
           contentMD5: encodeBase64(md5Hash),
         };
       } catch (error) {
@@ -193,9 +196,9 @@ export function useFileEncryption({
   );
 
   const decryptFileWithWorker = useCallback(
-    <T extends ContentFormat>(
+    (
       keyPair: nacl.BoxKeyPair,
-      encryptedData: EncryptedFile<T>,
+      metadata: EncryptedFileMetadata,
       encryptedPayload: Uint8Array
     ) => {
       if (!workerRef.current || !cryptoWorkerReady) {
@@ -214,8 +217,8 @@ export function useFileEncryption({
 
             const file = new File(
               [new Uint8Array(message.data.decrypted)],
-              encryptedData.fileName,
-              { type: encryptedData.mimeType }
+              metadata.fileName,
+              { type: metadata.mimeType }
             );
             resolve(file);
           }
@@ -230,8 +233,8 @@ export function useFileEncryption({
           type: "decryptFile",
           data: {
             encrypted: encryptedPayload,
-            nonce: decodeBase64(encryptedData.nonce),
-            senderPublicKey: decodeBase64(encryptedData.senderPublicKey || ""), //TODO: handle missing pub key
+            nonce: decodeBase64(metadata.nonce),
+            senderPublicKey: decodeBase64(metadata.senderPublicKey || ""), //TODO: handle missing pub key
             recipientSecretKey: keyPair.secretKey,
           } as DecryptFileWorkerPayload,
         });
@@ -243,23 +246,24 @@ export function useFileEncryption({
   );
 
   const decryptFileSync = useCallback(
-    <T extends ContentFormat>(
+    (
       keyPair: nacl.BoxKeyPair,
-      encryptedData: EncryptedFile<T>,
+      metadata: EncryptedFileMetadata,
       encryptedPayload: Uint8Array
     ) => {
+      const { nonce, senderPublicKey, fileName, mimeType } = metadata;
       try {
         const decryptedBytes = decryptFileFunc({
           encrypted: encryptedPayload,
-          nonce: decodeBase64(encryptedData.nonce),
-          senderPublicKey: decodeBase64(encryptedData.senderPublicKey || ""),
+          nonce: decodeBase64(nonce),
+          senderPublicKey: decodeBase64(senderPublicKey || ""),
           recipientSecretKey: keyPair.secretKey,
         });
 
         return new File(
           [new Uint8Array(decryptedBytes)],
-          encryptedData.fileName,
-          { type: encryptedData.mimeType }
+          fileName,
+          { type: mimeType }
         );
       } catch (error) {
         console.error(error);
@@ -280,21 +284,22 @@ export function useFileEncryption({
 
       setIsProcessing(true);
       setProgress(0);
-
+      const { encrypted, ...metadata } = encryptedData;
       let encryptedPayload: Uint8Array;
-      if (encryptedData.encrypted instanceof Uint8Array) {
-        encryptedPayload = encryptedData.encrypted;
-      } else if (encryptedData.encrypted instanceof Blob) {
-        const arrayBuffer = await encryptedData.encrypted.arrayBuffer();
+      if (encrypted instanceof Uint8Array) {
+        encryptedPayload = encrypted;
+      } else if (encrypted instanceof Blob) {
+        const arrayBuffer = await encrypted.arrayBuffer();
         encryptedPayload = new Uint8Array(arrayBuffer);
       } else {
         // string
-        encryptedPayload = decodeBase64(encryptedData.encrypted);
+        encryptedPayload = decodeBase64(encrypted);
       }
+
       try {
-        const result = await decryptFileWithWorker<T>(
+        const result = await decryptFileWithWorker(
           keyPair,
-          encryptedData,
+          metadata,
           encryptedPayload
         );
         return result;
@@ -303,7 +308,7 @@ export function useFileEncryption({
           "Worker decryption failed, falling back to synchronous processing",
           error
         );
-        return decryptFileSync<T>(keyPair, encryptedData, encryptedPayload);
+        return decryptFileSync(keyPair, metadata, encryptedPayload);
       } finally {
         setIsProcessing(false);
       }
