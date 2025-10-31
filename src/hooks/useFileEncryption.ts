@@ -282,11 +282,12 @@ export function useFileEncryption({
         encryptedPayload = decodeBase64(encryptedData.encrypted);
       }
       try {
-        return decryptFileWithWorker<T>(
+        const result = await decryptFileWithWorker<T>(
           keyPair,
           encryptedData,
           encryptedPayload
         );
+        return result;
       } catch (error) {
         console.error("Worker decryption failed, falling back to synchronous processing", error);
         return decryptFileSync<T>(keyPair, encryptedData, encryptedPayload);
