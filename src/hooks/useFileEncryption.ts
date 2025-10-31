@@ -124,26 +124,31 @@ export function useFileEncryption({
       fileBytes: Uint8Array,
       recipientPublicKey: string
     ) => {
-      const { encrypted, nonce, originalSize } = encryptFileFunc({
-        unencrypted: fileBytes,
-        recipientPublicKey: decodeBase64(recipientPublicKey),
-        senderSecretKey: keyPair.secretKey,
-      });
+      try {
+        const { encrypted, nonce, originalSize } = encryptFileFunc({
+          unencrypted: fileBytes,
+          recipientPublicKey: decodeBase64(recipientPublicKey),
+          senderSecretKey: keyPair.secretKey,
+        });
 
-      setProgress(100);
-      const encryptedArray = new Uint8Array(encrypted);
-      const md5Hash = nacl.hash(encryptedArray);
-      const encryptedBlob = new Blob([encryptedArray], {
-        type: "application/octet-stream",
-      });
-      return {
-        encrypted: encryptedBlob,
-        nonce: encodeBase64(nonce),
-        fileName: file.name,
-        mimeType: file.type,
-        fileSize: originalSize,
-        contentMD5: encodeBase64(md5Hash),
-      };
+        setProgress(100);
+        const encryptedArray = new Uint8Array(encrypted);
+        const md5Hash = nacl.hash(encryptedArray);
+        const encryptedBlob = new Blob([encryptedArray], {
+          type: "application/octet-stream",
+        });
+        return {
+          encrypted: encryptedBlob,
+          nonce: encodeBase64(nonce),
+          fileName: file.name,
+          mimeType: file.type,
+          fileSize: originalSize,
+          contentMD5: encodeBase64(md5Hash),
+        };
+      } catch (error) {
+        console.error(error);
+        throw new Error("Decryption failed");
+      }
     },
     []
   );
@@ -243,18 +248,23 @@ export function useFileEncryption({
       encryptedData: EncryptedFile<T>,
       encryptedPayload: Uint8Array
     ) => {
-      const decryptedBytes = decryptFileFunc({
-        encrypted: encryptedPayload,
-        nonce: decodeBase64(encryptedData.nonce),
-        senderPublicKey: decodeBase64(encryptedData.senderPublicKey || ""),
-        recipientSecretKey: keyPair.secretKey,
-      });
+      try {
+        const decryptedBytes = decryptFileFunc({
+          encrypted: encryptedPayload,
+          nonce: decodeBase64(encryptedData.nonce),
+          senderPublicKey: decodeBase64(encryptedData.senderPublicKey || ""),
+          recipientSecretKey: keyPair.secretKey,
+        });
 
-      return new File(
-        [new Uint8Array(decryptedBytes)],
-        encryptedData.fileName,
-        { type: encryptedData.mimeType }
-      );
+        return new File(
+          [new Uint8Array(decryptedBytes)],
+          encryptedData.fileName,
+          { type: encryptedData.mimeType }
+        );
+      } catch (error) {
+        console.error(error);
+        throw new Error("Decryption failed");
+      }
     },
     []
   );
@@ -289,7 +299,10 @@ export function useFileEncryption({
         );
         return result;
       } catch (error) {
-        console.error("Worker decryption failed, falling back to synchronous processing", error);
+        console.error(
+          "Worker decryption failed, falling back to synchronous processing",
+          error
+        );
         return decryptFileSync<T>(keyPair, encryptedData, encryptedPayload);
       } finally {
         setIsProcessing(false);
