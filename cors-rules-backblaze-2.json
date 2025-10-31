@@ -1,0 +1,41 @@
+[
+  {
+    "corsRuleName": "allowNetlifyApp",
+    "allowedOrigins": [
+      "https://e2ee-file-drop.netlify.app"
+    ],
+    "allowedOperations": [
+      "b2_upload_file",
+      "b2_upload_part",
+      "b2_download_file_by_name",
+      "b2_download_file_by_id",
+      "s3_put",
+      "s3_get",
+      "s3_head",
+      "s3_delete"
+    ],
+    "allowedHeaders": [
+      "Authorization",
+      "Content-Type",
+      "Content-Length",
+      "Content-MD5",
+      "X-Amz-*",
+      "X-Bz-File-Name",
+      "X-Bz-Content-Sha1",
+      "X-Bz-Info-*"
+    ],
+    "exposeHeaders": [
+      "Etag",
+      "X-Amz-Request-Id",
+      "X-Amz-Id-2",
+      "X-Amz-Version-Id",
+      "X-Bz-Content-Sha1",
+      "X-Bz-File-Id",
+      "X-Bz-File-Name",
+      "X-Bz-Upload-Timestamp",
+      "Content-Length",
+      "Content-Type"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

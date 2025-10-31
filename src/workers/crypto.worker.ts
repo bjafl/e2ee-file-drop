@@ -1,65 +1,39 @@
 // crypto.worker.ts
+import { decryptFile, encryptFile } from "@/lib/cryptoUtils";
 import type {
   DecryptFileWorkerPayload,
   EncryptFileWorkerPayload,
   EncryptFileWorkerResponse,
   FileDecryptedMessage,
 } from "@/types/data";
-import nacl from "tweetnacl";
-// import { encodeBase64, decodeBase64 } from 'tweetnacl-util';
 
 self.onmessage = async (e) => {
   const { type, data } = e.data;
 
+  if (type === "ping") {
+    self.postMessage({ type: "pong" });
+  }
+
   if (type === "encryptFile") {
-    const { unencrypted, recipientPublicKey, senderSecretKey } =
-      data as EncryptFileWorkerPayload;
-
-    // Generate nonce
-    const nonce = nacl.randomBytes(nacl.box.nonceLength);
-
-    // Encrypt
-    const encrypted = nacl.box(
-      unencrypted,
-      nonce,
-      recipientPublicKey,
-      senderSecretKey
-    );
+    const encryptedData = encryptFile(data as EncryptFileWorkerPayload);
 
     self.postMessage({
       type: "fileEncrypted",
-      data: {
-        encrypted,
-        nonce,
-        originalSize: unencrypted.length,
-      },
+      data: encryptedData,
     } as EncryptFileWorkerResponse);
   }
 
   if (type === "decryptFile") {
-    const { encrypted, nonce, senderPublicKey, recipientSecretKey } =
-      data as DecryptFileWorkerPayload;
 
     try {
-      console.log("Decrypting:", { encrypted, nonce, senderPublicKey, recipientSecretKey });
-      const decrypted = nacl.box.open(
-        encrypted,
-        nonce,
-        senderPublicKey,
-        recipientSecretKey
-      );
-      console.log("Decrypted:", decrypted);
-      if (!decrypted) {
-        throw new Error("Decryption failed");
-      }
-    self.postMessage({
-      type: "fileDecrypted",
-      data: { decrypted },
-    } as FileDecryptedMessage);
+      const decrypted = decryptFile(data as DecryptFileWorkerPayload);
+      self.postMessage({
+        type: "fileDecrypted",
+        data: { decrypted },
+      } as FileDecryptedMessage);
     } catch (error) {
       self.postMessage({ type: "decryptError", message: `${error}` });
       return;
     }
-
   }
 };
