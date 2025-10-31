@@ -73,6 +73,9 @@ export function useFileEncryption({
       fileBytes: Uint8Array,
       recipientPublicKey: string
     ) => {
+      if (!workerRef.current || !cryptoWorkerReady) {
+        throw new Error("Crypto worker not ready");
+      }
       return new Promise<EncryptedFile<Blob>>((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error("Encryption timeout"));
@@ -111,7 +114,7 @@ export function useFileEncryption({
         setProgress(60);
       });
     },
-    []
+    [cryptoWorkerReady]
   );
 
   const encryptFileSync = useCallback(
@@ -150,8 +153,8 @@ export function useFileEncryption({
       file: File,
       recipientPublicKey: string
     ): Promise<EncryptedFile<Blob>> => {
-      if (!keyPair || !workerRef.current || !cryptoWorkerReady) {
-        throw new Error("Not ready");
+      if (!keyPair) {
+        throw new Error("No local key pair found");
       }
 
       setIsProcessing(true);
@@ -181,7 +184,7 @@ export function useFileEncryption({
         setIsProcessing(false);
       }
     },
-    [cryptoWorkerReady, encryptFileSync, encryptFileWithWorker, keyPair]
+    [encryptFileSync, encryptFileWithWorker, keyPair]
   );
 
   const decryptFileWithWorker = useCallback(
@@ -190,6 +193,9 @@ export function useFileEncryption({
       encryptedData: EncryptedFile<T>,
       encryptedPayload: Uint8Array
     ) => {
+      if (!workerRef.current || !cryptoWorkerReady) {
+        throw new Error("Crypto worker not ready");
+      }
       return new Promise<File>((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error("Decryption timeout"));
@@ -228,7 +234,7 @@ export function useFileEncryption({
         setProgress(50);
       });
     },
-    []
+    [cryptoWorkerReady]
   );
 
   const decryptFileSync = useCallback(
@@ -258,8 +264,8 @@ export function useFileEncryption({
       encryptedData: EncryptedFile<T>
       // senderPublicKey: string
     ): Promise<File> => {
-      if (!keyPair || !workerRef.current) {
-        throw new Error("Not ready");
+      if (!keyPair) {
+        throw new Error("No local key pair found");
       }
 
       setIsProcessing(true);
