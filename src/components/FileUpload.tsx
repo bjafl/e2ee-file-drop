@@ -1,5 +1,5 @@
 // components/FileUpload.tsx
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useParams, /*useNavigate*/ } from "react-router-dom";
 import { Upload, File, X, Check, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { useFileEncryption } from "@/hooks/useFileEncryption";
 import { useApi } from "@/hooks/useApi";
 import { useBrowserStorage } from "@/hooks/useBrowserStorage";
 import { encodeBase64 } from "tweetnacl-util";
+import { t } from "i18next";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -29,15 +30,19 @@ export function FileUpload() {
     // progress: encryptionProgress,
   } = useFileEncryption({ generateNewKeyPair: true });
   const { setValue: setStoredKey } = useBrowserStorage();
-  const { getUploadUrl } = useApi();
+  const { getUploadUrl, getSession } = useApi();
   // const navigate = useNavigate();
-
+  const [status, setStatus] = useState<'checking' | 'ready' | 'encrypting' | 'uploading' | 'success' | 'error'>('checking');
+  const [sessionData, setSessionData] = useState<{
+    fileName?: string;
+    fileSize?: number;
+    recipientPublicKey: string;
+    nonce?: string;
+  } | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -81,13 +86,17 @@ export function FileUpload() {
   const removeFile = () => {
     setFile(null);
     setError(null);
-    setSuccess(false);
+    setStatus('ready');
+    setProgress(0);
   };
 
   const handleUpload = async () => {
     if (!file || !sessionId) return;
-
-    setUploading(true);
+    if (!sessionData) {
+      setError("Session data not loaded yet");
+      return;
+    }
+    setStatus('uploading');
     setError(null);
     setProgress(0);
 
@@ -95,17 +104,26 @@ export function FileUpload() {
       // Get public key
       setProgress(10);
       if (!keyPair) throw new Error("Key pair not ready");
-      const publicKey = encodeBase64(keyPair.publicKey);
+      const myPublicKey = encodeBase64(keyPair.publicKey);
 
       // Encrypt file
       setProgress(30);
-      const encryptedBlob = await encryptFile(file, publicKey);
+      const encryptedBlob = await encryptFile(file, sessionData.recipientPublicKey);
       const encryptedSize = encryptedBlob.encrypted.size;
+      
+      console.log('Encrypted file metadata:', {
+        fileName: encryptedBlob.fileName,
+        fileSize: encryptedBlob.fileSize,
+        nonce: encryptedBlob.nonce,
+        senderPublicKey: encryptedBlob.senderPublicKey,
+        receiverPublicKey: sessionData.recipientPublicKey,
+        contentMD5: encryptedBlob.contentMD5,
+      });
 
       setProgress(50);
       // Get upload URL
       const { uploadUrl } = await getUploadUrl(sessionId, {
-        senderPublicKey: publicKey,
+        senderPublicKey: myPublicKey,
         metadata: {
           fileName: file.name,
           fileSize: encryptedSize,
@@ -114,12 +132,13 @@ export function FileUpload() {
           contentMD5: encryptedBlob.contentMD5,
         },
       });
+
       if (!uploadUrl) throw new Error("Failed to get upload URL");
 
       // Store keys
 
       setStoredKey(sessionId, {
-        theirPublicKey: publicKey,
+        theirPublicKey: myPublicKey,
         myPrivateKey: encodeBase64(keyPair.secretKey),
       });
 
@@ -153,7 +172,7 @@ export function FileUpload() {
       }
 
       setProgress(100);
-      setSuccess(true);
+      setStatus('success');
 
       //TODO: Redirect when finished
       // setTimeout(() => {
@@ -161,10 +180,9 @@ export function FileUpload() {
       // }, 500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Noe gikk galt");
+      setStatus('error');
       setProgress(0);
-    } finally {
-      setUploading(false);
-    }
+    } 
   };
 
   const formatFileSize = (bytes: number) => {
@@ -175,6 +193,29 @@ export function FileUpload() {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
+  useEffect(() => {
+    if (status !== 'checking' || !sessionId) return;
+    
+    const checkStatus = async () => {
+      setError(null);
+      try {
+        const data = await getSession(sessionId);
+        console.log('Session data:', { ...data });
+        setSessionData({
+          fileName: data.fileName,
+          fileSize: data.fileSize,
+          recipientPublicKey: data.recipientPublicKey,
+          nonce: data.nonce,
+        });
+        setStatus('ready');
+      } catch (err) {
+        console.error(err);
+        setError(t('uploadFileCard.errors.sessionNotFound', { sessionId }));
+        setStatus('error');
+      }
+    };
+    checkStatus();
+  }, [getSession, sessionId, status]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 flex items-center justify-center">
       <Card className="w-full max-w-2xl">
@@ -202,7 +243,7 @@ export function FileUpload() {
                 id="file-upload"
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 onChange={handleChange}
-                disabled={uploading}
+                disabled={status !== 'ready'}
               />
               <div className="flex flex-col items-center justify-center gap-4 text-center">
                 <div className="p-4 bg-slate-100 rounded-full">
@@ -235,7 +276,7 @@ export function FileUpload() {
                     {formatFileSize(file.size)}
                   </p>
                 </div>
-                {!uploading && !success && (
+                {status === 'ready' && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -245,14 +286,14 @@ export function FileUpload() {
                     <X className="w-4 h-4" />
                   </Button>
                 )}
-                {success && (
+                {status === 'success' && (
                   <div className="p-2 bg-green-100 rounded-full">
                     <Check className="w-5 h-5 text-green-600" />
                   </div>
                 )}
               </div>
 
-              {uploading && (
+              {status === 'uploading' && (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm text-slate-600">
                     <span>Laster opp...</span>
@@ -262,7 +303,7 @@ export function FileUpload() {
                 </div>
               )}
 
-              {!uploading && !success && (
+              {status === 'ready' && (
                 <Button onClick={handleUpload} className="w-full" size="lg">
                   <Upload className="w-4 h-4 mr-2" />
                   Krypter og last opp
@@ -271,14 +312,14 @@ export function FileUpload() {
             </div>
           )}
 
-          {error && (
+          {status === 'error' && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          {success && (
+          {status === 'success' && (
             <Alert className="border-green-200 bg-green-50">
               <Check className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">
