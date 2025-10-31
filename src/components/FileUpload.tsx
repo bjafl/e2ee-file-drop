@@ -122,7 +122,7 @@ export function FileUpload() {
 
       setProgress(50);
       // Get upload URL
-      const { uploadUrl } = await getUploadUrl(sessionId, {
+      const uploadUrlPayload = {
         senderPublicKey: myPublicKey,
         metadata: {
           fileName: file.name,
@@ -131,8 +131,8 @@ export function FileUpload() {
           mimeType: file.type,
           contentMD5: encryptedBlob.contentMD5,
         },
-      });
-
+      };
+      const { uploadUrl } = await getUploadUrl(sessionId, uploadUrlPayload);
       if (!uploadUrl) throw new Error("Failed to get upload URL");
 
       // Store keys
@@ -165,6 +165,7 @@ export function FileUpload() {
 
       try {
         await getUploadUrl(sessionId, {
+          ...uploadUrlPayload,
           uploadComplete: true,
         });
       } catch (err) {

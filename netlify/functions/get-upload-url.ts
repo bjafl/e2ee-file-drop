@@ -46,6 +46,7 @@ export default async (request: Request, context: Context) => {
     return new Response(
       JSON.stringify({
         message: "Session updated to uploaded",
+        sessionData: session,
       }),
       { status: 200 }
     );
