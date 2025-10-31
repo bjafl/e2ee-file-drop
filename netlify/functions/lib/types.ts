@@ -1,8 +1,7 @@
-export interface Session {
+export interface SessionData {
   senderPublicKey?: string;
   recipientPublicKey: string;
   expiresAt: number;
-  status: "waiting" | "uploading" | "uploaded" | "downloading" | "downloaded";
   nonce?: string;
   mimeType?: string;
   s3Key?: string;
@@ -10,6 +9,10 @@ export interface Session {
   fileName?: string;
   contentMD5?: string;
 }
+export interface SessionMetadata {
+  status?: "waiting" | "uploading" | "uploaded" | "downloading" | "downloaded";
+}
+export type Session = SessionData & SessionMetadata;
 
 export interface UploadUrlPayload {
   senderPublicKey: string; // base64

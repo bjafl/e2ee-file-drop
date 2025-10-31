@@ -1,8 +1,8 @@
 import { Config, Context } from "@netlify/edge-functions";
 import { nanoid } from "nanoid";
 import type { UploadUrlPayload } from "./lib/types";
-import {  getSignedUploadUrl } from "./lib/b2";
-import { getSession, saveSession } from "./lib/netlifyBlob";
+import { getSignedUploadUrl } from "./lib/b2";
+import { getSession, saveSession, setSessionMetadata } from "./lib/netlifyBlob";
 import { MAX_FILE_SIZE } from "./lib/const";
 
 export default async (request: Request, context: Context) => {
@@ -23,7 +23,36 @@ export default async (request: Request, context: Context) => {
     uploadComplete = false,
     metadata,
   } = (await request.json()) as UploadUrlPayload;
-  
+
+  // Handle upload complete update
+  if (uploadComplete) {
+    const result = await setSessionMetadata(sessionId, { status: "uploaded" });
+    if (result === null) {
+      return new Response(
+        JSON.stringify({ error: "Could not update session status" }),
+        {
+          status: 500,
+        }
+      );
+    }
+    return new Response(
+      JSON.stringify({
+        message: "Session updated to uploaded",
+      }),
+      { status: 200 }
+    );
+  }
+  const session = await getSession(sessionId);
+  if (!session) {
+    return new Response(JSON.stringify({ error: "Session not found" }), {
+      status: 404,
+    });
+  }
+
+
+
+  // Process upload url request
+
   if (
     !senderPublicKey ||
     !metadata ||
@@ -38,46 +67,7 @@ export default async (request: Request, context: Context) => {
     });
   }
 
-  
-  const session = await getSession(sessionId);
-  if (!session) {
-    return new Response(JSON.stringify({ error: "Session not found" }), {
-      status: 404,
-    });
-  }
-  
   const { fileName, fileSize, nonce, mimeType, contentMD5 } = metadata;
-  session.senderPublicKey = senderPublicKey;
-  session.fileName = fileName;
-  session.fileSize = fileSize;
-  session.nonce = nonce;
-  session.mimeType = mimeType;
-  session.contentMD5 = contentMD5;
-
-  // Handle upload complete update
-  if (uploadComplete) {
-    session.status = "uploaded";
-    const result = await saveSession(sessionId, session);
-    if (result === null) {
-      return new Response(
-        JSON.stringify({ error: "Could not update session status" }),
-        {
-          status: 500,
-        }
-      );
-    }
-    return new Response(
-      JSON.stringify({
-        message: "Session updated to uploaded",
-        sessionData: session,
-      }),
-      { status: 200 }
-    );
-  }
-
-  // Process upload url request
-
- 
 
   // Size limit
   if (fileSize > MAX_FILE_SIZE) {
@@ -87,11 +77,16 @@ export default async (request: Request, context: Context) => {
       }),
       { status: 413 }
     );
-  } 
+  }
 
- const fileId = nanoid(16);
+  const fileId = nanoid(16);
   const s3Key = `${sessionId}/${fileId}`;
-
+  session.senderPublicKey = senderPublicKey;
+  session.fileName = fileName;
+  session.fileSize = fileSize;
+  session.nonce = nonce;
+  session.mimeType = mimeType;
+  session.contentMD5 = contentMD5;
   session.s3Key = s3Key;
   session.status = "uploading";
 

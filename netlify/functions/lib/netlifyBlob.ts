@@ -1,5 +1,5 @@
 import { getStore, Store } from "@netlify/blobs";
-import type { Session } from "./types";
+import type { Session, SessionData, SessionMetadata } from "./types";
 import { deleteFromBucket } from "./b2";
 
 let sessionStore: Store | null = null;
@@ -14,25 +14,44 @@ export function getSessionStore() {
 export async function getSession(sessionId: string): Promise<Session | null> {
   const store = getSessionStore();
   try {
-  const session = (await store.get(sessionId, {
-    type: "json",
-  })) as Session | null;
-  return session;
+    const session = (await store.get(sessionId, {
+      type: "json",
+    })) as SessionData | null;
+    if (!session) {
+      return null;
+    }
+    const sessionMetadata = (await store.get(`${sessionId}-metadata`, {
+      type: "json",
+    })) as SessionMetadata | null;
+    return { ...session, ...sessionMetadata };
   } catch (error) {
     console.error(`Error getting session ${sessionId}:`, error);
     return null;
   }
 }
 
-export async function saveSession(
+export async function saveSession(sessionId: string, session: Session) {
+  try {
+    const store = getSessionStore();
+    const { status, ...sessionData } = session;
+    await store.setJSON(sessionId, sessionData);
+    await store.setJSON(`${sessionId}-metadata`, { status });
+    return true;
+  } catch (error) {
+    console.error(`Error saving session ${sessionId}:`, error);
+    return null;
+  }
+}
+export async function setSessionMetadata(
   sessionId: string,
-  session: Session
+  metadata: SessionMetadata
 ) {
   try {
     const store = getSessionStore();
-    return await store.set(sessionId, JSON.stringify(session));
+    await store.setJSON(`${sessionId}-metadata`, metadata);
+    return true;
   } catch (error) {
-    console.error(`Error saving session ${sessionId}:`, error);
+    console.error(`Error setting metadata for session ${sessionId}:`, error);
     return null;
   }
 }
@@ -41,10 +60,11 @@ export async function deleteSession(
   sessionId: string,
   cleanupB2 = true,
   s3Key?: string
-): Promise<{ b2Deleted: boolean; sessionDeleted: boolean }> {
+) {
   const store = getSessionStore();
   let b2Deleted = false;
   let sessionDeleted = false;
+  let sessionMetadataDeleted = false;
   if (cleanupB2) {
     try {
       if (!s3Key) {
@@ -65,7 +85,13 @@ export async function deleteSession(
   } catch (error) {
     console.error(`Error deleting session ${sessionId}:`, error);
   }
-  return { b2Deleted, sessionDeleted };
+  try {
+    await store.delete(`${sessionId}-metadata`);
+    sessionMetadataDeleted = true;
+  } catch (error) {
+    console.error(`Error deleting session metadata ${sessionId}-metadata:`, error);
+  }
+  return { b2Deleted, sessionDeleted, sessionMetadataDeleted };
 }
 
 export async function deleteExpiredSessions(cleanupB2 = true): Promise<number> {
@@ -76,7 +102,11 @@ export async function deleteExpiredSessions(cleanupB2 = true): Promise<number> {
   blobKeys.forEach(async (key) => {
     const blob = await getSession(key);
     if (blob && (blob.expiresAt < Date.now() || !blob.expiresAt)) {
-      const { sessionDeleted } = await deleteSession(key, cleanupB2, blob.s3Key);
+      const { sessionDeleted } = await deleteSession(
+        key,
+        cleanupB2,
+        blob.s3Key
+      );
       if (sessionDeleted) {
         deletedCount++;
       }
